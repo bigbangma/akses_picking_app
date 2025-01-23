@@ -32,9 +32,6 @@ export default function PointOfSalePage() {
     const fetchData = async () => {
       try {
         const response = await fetch(`/api/pos/${id}/transfers`)
-        if (!response.ok) {
-          throw new Error('Network response was not ok')
-        }
         const data = await response.json()
         // setTodoItems(data.transfers[0].moves) // Assuming the data is an array of items
         // join all the transfers
@@ -108,6 +105,7 @@ export default function PointOfSalePage() {
                     <p>All items have been checked</p>
                   </div>
                 ) : (
+                  todoItems&& 
                   todoItems.map((item) => (
                     <Card key={item.id} className="relative">
                       <CardContent className="p-4 flex flex-col justify-between ">

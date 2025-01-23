@@ -3,11 +3,14 @@ export async function GET(request: Request,{params}: {params: {id: string}}) {
 
   try {
 
+    const backend = process.env.NEXT_PUBLIC_BACKEND_API
+    const auth = process.env.NEXT_PUBLIC_BACKEND_AUTH
+
     // Second fetch with the session ID included in the headers as a cookie
-    const dataResponse = await fetch(`http://192.168.212.11:8018/api/pos/${id}/transfers`, {
+    const dataResponse = await fetch(backend + `/api/pos/${id}/transfers`, {
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer fb0cf024173367785ed952665d8bd790efaee0f1",
+        "Authorization": "Bearer " + auth,
       },
     });
 
