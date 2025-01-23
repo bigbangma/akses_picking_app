@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -9,76 +9,83 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, CheckIcon,  Clock,  PackageCheck,  PackageX,  StoreIcon,  XIcon } from "lucide-react"
+import { ArrowLeft, CheckIcon, Clock, PackageCheck, PackageX, StoreIcon, XIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-
-const items = [
-  { id: 1, name: "Paper Towels", quantity: 30,quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 2, name: "Dish Soap", quantity: 50,quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 3, name: "Trash Bags", quantity: 30,quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 4, name: "Cleaning Spray", quantity: 20,quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 5, name: "Sponges", quantity: 50, quantityOut:0,  image: "/placeholder.svg?height=50&width=50" },
-  { id: 6, name: "Toilet Paper", quantity: 40, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 7, name: "Hand Soap", quantity: 30, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 8, name: "Laundry Detergent", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 9, name: "Bleach", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 10, name: "Dishwasher Detergent", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 11, name: "Fabric Softener", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 12, name: "All-Purpose Cleaner", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 13, name: "Glass Cleaner", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 14, name: "Air Freshener", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 15, name: "Toilet Bowl Cleaner", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 16, name: "Disinfecting Wipes", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 17, name: "Stain Remover", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 18, name: "Oven Cleaner", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 19, name: "Drain Cleaner", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-  { id: 20, name: "Carpet Cleaner", quantity: 20, quantityOut:0, image: "/placeholder.svg?height=50&width=50" },
-]
-
-const pointsOfSale = [
-  { id: 1, name: "Cashier 1", date: "2023-07-15" },
-  { id: 2, name: "Cashier 2", date: "2023-07-16" },
-  { id: 3, name: "Self-Checkout", date: "2023-07-17" },
-]
+type Item = {
+  id: number
+  product_id: number
+  product_name: string
+  product_image: string
+  demand_quantity: number
+  done_quantity: number
+}
 
 export default function PointOfSalePage() {
   const { id } = useParams()
-  const [todoItems, setTodoItems] = useState(items)
-  const [doneItems, setDoneItems] = useState<typeof items>([])
+  const [todoItems, setTodoItems] = useState<Item[]>([])
+  const [doneItems, setDoneItems] = useState<Item[]>([])
 
-  const handleCheck = (item: (typeof items)[0]) => {
+  useEffect(() => {
+    // Fetch data from the endpoint
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`/api/pos/${id}/transfers`)
+        if (!response.ok) {
+          throw new Error('Network response was not ok')
+        }
+        const data = await response.json()
+        // setTodoItems(data.transfers[0].moves) // Assuming the data is an array of items
+        // join all the transfers
+        // const moves = data.transfers.map((transfer: {moves:Item[]}) => transfer.moves)
+        // join all the moves with quantity of all the moves with same product id
+        setTodoItems(data.transfers[data.transfers.length - 1].moves.map(
+          (move: Item) => ({
+            ...move,
+            done_quantity: 0,
+          })
+        ))
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      }
+    }
+
+    fetchData()
+  }, [id])
+
+  const handleCheck = (item: Item) => {
     setTodoItems(todoItems.filter((i) => i.id !== item.id))
     setDoneItems([...doneItems, {
       ...item,
-      quantityOut: item.quantityOut == 0 ? item.quantity : item.quantityOut
-    }])
-  }
-  const handleCancel = (item: (typeof items)[0]) => {
-    setTodoItems(todoItems.filter((i) => i.id !== item.id))
-    setDoneItems([...doneItems, {
-      ...item,
-      quantityOut: 0
+      done_quantity: item.done_quantity == 0 ? item.demand_quantity : item.done_quantity
     }])
   }
 
-  const handleUncheck = (item: (typeof items)[0]) => {
+  const handleCancel = (item: Item) => {
+    setTodoItems(todoItems.filter((i) => i.id !== item.id))
+    setDoneItems([...doneItems, {
+      ...item,
+      done_quantity: 0 // Assuming the item is canceled
+    }])
+  }
+
+  const handleUncheck = (item: Item) => {
     setDoneItems(doneItems.filter((i) => i.id !== item.id))
     setTodoItems([...todoItems, item])
   }
 
   const handleQuantityChange = (itemId: number, newQuantity: number) => {
-    setTodoItems(todoItems.map((item) => (item.id === itemId ? { ...item, quantityOut: newQuantity } : item)))
+    setTodoItems(todoItems.map((item) => 
+      item.id === itemId ? { ...item, done_quantity: newQuantity } : item
+    ))
   }
-
-  const pos = pointsOfSale.find((pos) => pos.id === Number(id))
 
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold mb-4 flex items-center"><StoreIcon className="w-6 h-6 mr-2" /> Point of Sale {id}</h1>
-        <p className="text-lg flex items-center mb-4"><Clock className="w-6 h-6 mr-2" /> {pos?.date}</p>
+        <p className=" flex items-center mb-4"><Clock className="w-6 h-6 mr-2" /> {new Date().toLocaleDateString()}</p>
       </div>
       <Link href="/">
         <Button variant="outline" className="mb-4">
@@ -88,42 +95,36 @@ export default function PointOfSalePage() {
       </Link>
       <div className="">
         <div>
-
-<Tabs defaultValue="todo"  className="w-full">
-  <TabsList className="bg-slate-200 rounded-full mx-auto w-fit flex justify-center">
-    <TabsTrigger className="h-8 px-8 rounded-full" value="todo">Todo ({todoItems.length})</TabsTrigger>
-    <TabsTrigger className="h-8 px-8 rounded-full" value="done">Done ({doneItems.length})</TabsTrigger>
-  </TabsList>
-  <TabsContent value="todo" className="w-full">
-<div className="space-y-2">
-            {
-              !todoItems.length ?
-              <div className="flex gap-3 justify-center items-center h-32">
-                <PackageCheck size={40} strokeWidth={1}/>
-                <p>All items have been checked</p>
-              </div>
-              :
-            todoItems.map((item) => (
-              <Card key={item.id}>
-                <CardContent className="p-4 flex justify-between items-center">
-                  <div className="flex flex-1 items-center space-x-4">
-                    <Image src={item.image || "/placeholder.svg"} alt={""} width={50} height={50} className="rounded-xl bg-slate-100 border"/>
-                      <p className="font-medium">{item.name}
-                        <Badge className="ml-2 text-sm rounded-full" variant="outline" > {item.quantity}</Badge>
-                      </p>
+          <Tabs defaultValue="todo" className="w-full">
+            <TabsList className="bg-slate-200 rounded-full mx-auto w-fit flex justify-center">
+              <TabsTrigger className="h-8 px-8 rounded-full" value="todo">Todo ({todoItems.length})</TabsTrigger>
+              <TabsTrigger className="h-8 px-8 rounded-full" value="done">Done ({doneItems.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="todo" className="w-full">
+              <div className="space-y-2">
+                {!todoItems.length ? (
+                  <div className="flex gap-3 justify-center items-center h-32">
+                    <PackageCheck size={40} strokeWidth={1} />
+                    <p>All items have been checked</p>
                   </div>
-                  <div className="flex gap-2 items-center">
+                ) : (
+                  todoItems.map((item) => (
+                    <Card key={item.id} className="relative">
+                      <CardContent className="p-4 flex flex-col justify-between ">
+                        <div className="flex flex-1  space-x-4">
+                          <Image src={"data:image/jpeg;base64,"+item.product_image || "/placeholder.svg"} alt={item.product_name} width={50} height={50} className="rounded-xl size-16 object-contain p-1 bg-slate-100 border" />
+                          <p className="">
+                            {item.product_name}
+                            <Badge className="ml-2 p-0 border-none absolute top-2 right-2 text-gray-800 rounded-full text-md" variant="outline"> {item.demand_quantity}</Badge>
+                          </p>
+                        </div>
+                        <div className="flex gap-2 items-center">
                           <Input
                             type="number"
-                            value={item.quantityOut}
-                            onChange={(e) => handleQuantityChange(item.id, 
-                            Math.min(
-                            Number.parseInt(e.target.value),
-                            item.quantity
-                            )
-                            )}
+                            value={item.done_quantity}
+                            onChange={(e) => handleQuantityChange(item.id, Math.min(Number.parseInt(e.target.value), item.demand_quantity))}
                             className="w-20 ml-auto"
-                            max={item.quantity}
+                            max={item.demand_quantity}
                           />
                           <Button size={"icon"} onClick={() => handleCheck(item)}>
                             <CheckIcon className="w-6 h-6" />
@@ -131,73 +132,55 @@ export default function PointOfSalePage() {
                           <Button className="ml-3" variant="destructive" size={"icon"} onClick={() => handleCancel(item)}>
                             <XIcon className="w-6 h-6" />
                           </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-  </TabsContent>
-  <TabsContent value="done">
-<div className="space-y-2">
-            {
-              !doneItems.length ?
-              <div className="flex gap-3 justify-center items-center h-32">
-                <PackageX size={40} strokeWidth={1}/>
-                <p>No items have been checked</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
-              :
-            doneItems.map((item) => (
-              <Card key={item.id} >
-                <CardContent className="p-4 flex justify-between items-center text-gray-500">
-                  <div className="flex items-center space-x-4">
-                    <Image
-                      src={item.image || "/placeholder.svg"}
-                      alt={""}
-                      width={50}
-                      height={50}
-                      className="rounded bg-slate-100 border"
-                    />
-                    <div>
-                      <p className="font-medium">{item.name}
-                      <Badge variant="secondary" className={cn("text-sm ml-2 rounded-full",
-                        (item.quantityOut == 0 && "bg-red-500 text-white hover:bg-red-600"),
-                        (item.quantityOut != 0 && "bg-yellow-500 text-black hover:bg-yellow-600"),
-                        (item.quantityOut == item.quantity && "bg-green-500 text-white hover:bg-green-600")
-                      )}>
-                        {item.quantityOut}
-                        {
-                          item.quantity != item.quantityOut &&
-                          <span className="ml-1"> / {item.quantity}</span>
-                        } 
-                      </Badge>
-                      </p>
-                    </div>
+            </TabsContent>
+            <TabsContent value="done">
+              <div className="space-y-2">
+                {!doneItems.length ? (
+                  <div className="flex gap-3 justify-center items-center h-32">
+                    <PackageX size={40} strokeWidth={1} />
+                    <p>No items have been checked</p>
                   </div>
-                  <Checkbox className="w-6 h-6" checked={true} onCheckedChange={() => handleUncheck(item)} />
-                </CardContent>
-              </Card>
-            ))}
+                ) : (
+                  doneItems.map((item) => (
+                    <Card key={item.id}>
+                      <CardContent className="p-4 flex justify-between items-center text-gray-500">
+                        <div className="flex items-center space-x-4">
+                          <Image src={"data:image/png;base64," + item.product_image || "/placeholder.svg"} alt={item.product_name} width={50} height={50} className="rounded-xl size-12 object-contain p-1 bg-slate-100 border" />
+                          <div>
+                            <p className="font-medium">{item.product_name}
+                              <Badge variant="secondary" className={cn("text-sm ml-2 rounded-full",
+                                (item.done_quantity == 0 && "bg-red-500 text-white hover:bg-red-600"),
+                                (item.done_quantity != 0 && "bg-yellow-500 text-black hover:bg-yellow-600"),
+                                (item.done_quantity == item.demand_quantity && "bg-green-500 text-white hover:bg-green-600")
+                              )}>
+                                {item.done_quantity}
+                                {item.demand_quantity != item.done_quantity && <span className="ml-1"> / {item.demand_quantity}</span>}
+                              </Badge>
+                            </p>
+                          </div>
+                        </div>
+                        <Checkbox className="w-6 h-6" checked={true} onCheckedChange={() => handleUncheck(item)} />
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex justify-center mt-10">
+            <Button disabled={todoItems.length > 0} size={"lg"} className="text-lg py-6">
+              Mark as Done <CheckIcon className="w-6 h-6 ml-2" />
+            </Button>
           </div>
-  </TabsContent>
-</Tabs>
-
-  <div className="flex justify-center mt-10">
-    <Button
-      disabled={todoItems.length > 0}
-      size={"lg"} className="text-lg py-6">
-      Mark as Done <CheckIcon className="w-6 h-6 ml-2" />
-    </Button>
-  </div>
-
-
-
-
-
-
-
         </div>
       </div>
     </div>
   )
 }
-
