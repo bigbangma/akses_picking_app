@@ -22,34 +22,56 @@ type Item = {
   done_quantity: number
 }
 
+type Transfer = {
+  id: number
+  date: string
+  date_done: string
+  name: string
+  state:string
+  moves: Item[]
+}
 export default function PointOfSalePage() {
   const { id } = useParams()
   const [todoItems, setTodoItems] = useState<Item[]>([])
   const [doneItems, setDoneItems] = useState<Item[]>([])
+  const [transfers, setTransfers] = useState<Transfer[]>([])
 
-  useEffect(() => {
-    // Fetch data from the endpoint
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`/api/pos/${id}/transfers`)
-        const data = await response.json()
-        // setTodoItems(data.transfers[0].moves) // Assuming the data is an array of items
-        // join all the transfers
-        // const moves = data.transfers.map((transfer: {moves:Item[]}) => transfer.moves)
-        // join all the moves with quantity of all the moves with same product id
-        setTodoItems(data.transfers[data.transfers.length - 1].moves.map(
-          (move: Item) => ({
-            ...move,
-            done_quantity: 0,
-          })
-        ))
-      } catch (error) {
-        console.error('Error fetching data:', error)
-      }
+useEffect(() => {
+  // Fetch data from the endpoint
+  const fetchData = async () => {
+    try {
+      const response = await fetch(`/api/pos/${id}/transfers`);
+      const data = await response.json();
+      console.log(data)
+      setTransfers(data.transfers);
+      // Use a map to accumulate quantities for each product_id
+      const productMap = new Map();
+
+      data.transfers.forEach((transfer: { moves: Item[] }) => {
+        transfer.moves.forEach((move: Item) => {
+          if (productMap.has(move.product_id)) {
+            // If the product_id already exists in the map, update the quantity
+            const existingItem = productMap.get(move.product_id);
+            existingItem.demand_quantity += move.demand_quantity;
+          } else {
+            // If the product_id doesn't exist, add it to the map
+            productMap.set(move.product_id, { ...move });
+          }
+        });
+      });
+
+      // Convert the map values to an array
+      const uniqueProducts = Array.from(productMap.values());
+
+      // Set the state with the unique products
+      setTodoItems(uniqueProducts);
+    } catch (error) {
+      console.error('Error fetching data:', error);
     }
+  };
 
-    fetchData()
-  }, [id])
+  fetchData();
+}, [id]);
 
   const handleCheck = (item: Item) => {
     setTodoItems(todoItems.filter((i) => i.id !== item.id))
@@ -78,6 +100,73 @@ export default function PointOfSalePage() {
     ))
   }
 
+
+const handleMarkAsDone = () => {
+  // Create a copy of the transfers to avoid mutating the state directly
+  const updatedTransfers = [...transfers];
+
+  // Iterate through each product in the doneItems
+  doneItems.forEach((doneItem) => {
+    let remainingQuantity = doneItem.done_quantity;
+
+    // Find all transfers that contain this product
+    const relevantTransfers = updatedTransfers.filter((transfer) =>
+      transfer.moves.some((move) => move.product_id === doneItem.product_id)
+    );
+
+    // Distribute the done_quantity across the relevant transfers
+    relevantTransfers.forEach((transfer) => {
+      const move = transfer.moves.find((move) => move.product_id === doneItem.product_id);
+      if (move && remainingQuantity > 0) {
+        const quantityToAssign = Math.min(move.demand_quantity, remainingQuantity);
+        move.done_quantity = quantityToAssign;
+        remainingQuantity -= quantityToAssign;
+      }
+    });
+  });
+
+
+  updatedTransfers.forEach((transfer) => {
+    fetch(`/api/pos/transfer/${transfer.id}/confirm`, {
+      method: "POST",
+      body: JSON.stringify({
+        id: transfer.id,
+        body:{
+          moves:[
+            ...transfer.moves.map(move=>({
+              id: move.id,
+              quantity: move.done_quantity
+            }))
+          ]
+        }
+      }),
+    })  
+  })
+  
+
+  // // Optionally, you can send the updated transfers to the backend to save the changes
+  // // Example:
+  // fetch(`/api/pos/${id}/transfers`, {
+  //   method: "PUT",
+  //   headers: {
+  //     "Content-Type": "application/json",
+  //   },
+  //   body: JSON.stringify({ transfers: updatedTransfers }),
+  // })
+  //   .then((response) => response.json())
+  //   .then((data) => {
+  //     console.log("Transfers updated successfully:", data);
+  //   })
+  //   .catch((error) => {
+  //     console.error("Error updating transfers:", error);
+  //   });
+
+  // // Clear the todoItems and doneItems after marking as done
+  setTodoItems([]);
+  setDoneItems([]);
+};
+
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
@@ -96,6 +185,9 @@ export default function PointOfSalePage() {
             <TabsList className="bg-slate-200 rounded-full mx-auto w-fit flex justify-center">
               <TabsTrigger className="h-8 px-8 rounded-full" value="todo">Todo ({todoItems.length})</TabsTrigger>
               <TabsTrigger className="h-8 px-8 rounded-full" value="done">Done ({doneItems.length})</TabsTrigger>
+              <TabsTrigger className="h-8 px-8 rounded-full" value="waiting">
+                Waiting
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="todo" className="w-full">
               <div className="space-y-2">
@@ -170,10 +262,17 @@ export default function PointOfSalePage() {
                 )}
               </div>
             </TabsContent>
+            <TabsContent value="waiting">
+              <div className="space-y-2 flex justify-center items-center h-32">
+                <p>No items have been checked</p>
+              </div>
+            </TabsContent>
           </Tabs>
 
           <div className="flex justify-center mt-10">
-            <Button disabled={todoItems.length > 0} size={"lg"} className="text-lg py-6">
+            <Button
+             onClick={handleMarkAsDone}
+             disabled={todoItems.length > 0} size={"lg"} className="text-lg py-6">
               Mark as Done <CheckIcon className="w-6 h-6 ml-2" />
             </Button>
           </div>
