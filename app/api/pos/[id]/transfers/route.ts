@@ -15,7 +15,7 @@ export async function GET(request: Request,{params}: {params: {id: string}}) {
     });
 
 
-    const data = await dataResponse.json();
+    const data = await dataResponse.json()
 
     return Response.json(data);
   } catch (error) {

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const auth = process.env.NEXT_PUBLIC_BACKEND_AUTH
 
     // Second fetch with the session ID included in the headers as a cookie
-    const dataResponse = await fetch(backend + `/api/pos/transfers/${id}/confirm`, {
+    const dataResponse = await fetch(backend + `/api/transfer/${id}/done`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
