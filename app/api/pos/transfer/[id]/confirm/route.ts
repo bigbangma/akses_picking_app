@@ -30,7 +30,7 @@ export async function GET(request: Request,{params}: {params: {id: string}}) {
 
 export async function POST(request: Request) {
   const data = await request.json()
-  const {body,id} = data;
+  const {body,id,state} = data;
 
 
   try{
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     const auth = process.env.NEXT_PUBLIC_BACKEND_AUTH
 
     // Second fetch with the session ID included in the headers as a cookie
-    const dataResponse = await fetch(backend + `/api/transfer/${id}/done`, {
+    const dataResponse = await fetch(backend + `/api/transfer/${id}/${state}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -47,9 +47,8 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify(body)
     });
-    console.log(body,id)
-    console.log(`/api/pos/transfers/${id}/confirm`)
-    console.log(dataResponse.json())
+    console.log(body,id,state)
+    console.log(`/api/pos/transfers/${id}/${state}`)
     return Response.json(dataResponse);
   } catch (error) {
     console.error("Error in POST request:", error);

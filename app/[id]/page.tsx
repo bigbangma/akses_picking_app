@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, CheckIcon, Clock, Package, PackageCheck, PackageX, StoreIcon, XIcon } from "lucide-react"
+import { ArrowLeft, CheckIcon, Package, PackageCheck, PackageX, StoreIcon, XIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Item, Transfer } from "@/components/PointOfSaleCard"
@@ -20,6 +20,7 @@ export default function PointOfSalePage() {
   const [todoItems, setTodoItems] = useState<Item[]>([])
   const [waitingItems, setWaitingItems] = useState<Item[]>([])
   const [doneItems, setDoneItems] = useState<Item[]>([])
+  const [waitingDoneItems, setWaitingDoneItems] = useState<Item[]>([])
   const [transfers, setTransfers] = useState<Transfer[]>([])
 
 useEffect(() => {
@@ -38,7 +39,7 @@ useEffect(() => {
       data.transfers
       .filter((t:{state:string})=>t.state !== "done")
       .forEach((transfer: { moves: Item[], backorder_id:number }) => {
-          if(!transfer.backorder_id){
+        if(!transfer.backorder_id){
           transfer.moves.forEach((move: Item) => {
             if (productMap.has(move.product_id)) {
               // If the product_id already exists in the map, update the quantity
@@ -67,6 +68,19 @@ useEffect(() => {
       const uniqueProducts = Array.from(productMap.values());
       const uniqueProducts2 = Array.from(productMap2.values());
 
+
+    console.log("backorder count", 
+      data.transfers.filter((t:{state:string})=>t.state !== "done")
+      .filter((t:{backorder_id:number})=>t.backorder_id)
+      .length
+    )
+    console.log("normal count", 
+      data.transfers.filter((t:{state:string})=>t.state !== "done")
+      .filter((t:{backorder_id:number})=>!t.backorder_id)
+      .length
+    )
+
+
       // Set the state with the unique products
       setTodoItems(uniqueProducts);
       setWaitingItems(uniqueProducts2);
@@ -87,7 +101,7 @@ useEffect(() => {
     }])
     }else{
       setWaitingItems(waitingItems.filter((i) => i.id !== item.id))
-      setDoneItems([...doneItems, {
+      setWaitingDoneItems([... waitingDoneItems, {
         ...item,
         done_quantity: item.done_quantity == 0 ? item.demand_quantity : item.done_quantity
       }])
@@ -103,7 +117,7 @@ useEffect(() => {
     }])
     }else{
       setWaitingItems(waitingItems.filter((i) => i.id !== item.id))
-      setDoneItems([...doneItems, {
+      setWaitingDoneItems([... waitingDoneItems,{
         ...item,
         done_quantity: 0 // Assuming the item is canceled
       }])
@@ -111,10 +125,11 @@ useEffect(() => {
   }
 
   const handleUncheck = (item: Item) => {
-    setDoneItems(doneItems.filter((i) => i.id !== item.id))
     if(!item.backorder){
+      setDoneItems(doneItems.filter((i) => i.id !== item.id))
       setTodoItems([...todoItems, item])
     }else{
+      setWaitingDoneItems(waitingDoneItems.filter((i) => i.id !== item.id))
       setWaitingItems([...waitingItems, item])
     }
   }
@@ -122,9 +137,9 @@ useEffect(() => {
   const handleQuantityChange = (itemId: number, newQuantity: number) => {
     const from = todoItems.find(item => item.id === itemId) ? "todo" : "waiting"
     if(from === "todo"){
-    setTodoItems(todoItems.map((item) => 
-      item.id === itemId ? { ...item, done_quantity: newQuantity } : item
-    ))
+      setTodoItems(todoItems.map((item) => 
+        item.id === itemId ? { ...item, done_quantity: newQuantity } : item
+      ))
     }else{
       setWaitingItems(waitingItems.map((item) =>
         item.id === itemId ? { ...item, done_quantity: newQuantity } : item
@@ -132,56 +147,118 @@ useEffect(() => {
     }
   }
 
-
 const handleMarkAsDone = () => {
   // Create a copy of the transfers to avoid mutating the state directly
   const updatedTransfers = [...transfers.filter((t) => t.state !== "done")];
 
-  // Iterate through each product in the doneItems
-  doneItems.forEach((doneItem) => {
-    let remainingQuantity = doneItem.done_quantity;
+  function normalTransfer() {
+    // Iterate through each product in the doneItems
+    doneItems.forEach((doneItem) => {
+      let remainingQuantity = doneItem.done_quantity;
 
-    // Find all transfers that contain this product
-    const relevantTransfers = updatedTransfers
-    .filter((transfer) => transfer.state !== "done")
-    .filter((transfer) =>
-      transfer.moves.some((move) => move.product_id === doneItem.product_id)
-    );
+      // Find all transfers that contain this product and are not backorders
+      const relevantTransfers = updatedTransfers
+        .filter((transfer) => !transfer.backorder_id)
+        .filter((transfer) =>
+          transfer.moves.some((move) => move.product_id === doneItem.product_id)
+        );
 
-    // Distribute the done_quantity across the relevant transfers
-    relevantTransfers.forEach((transfer) => {
-      const move = transfer.moves.find((move) => move.product_id === doneItem.product_id);
-      if (move && remainingQuantity > 0) {
-        const quantityToAssign = Math.min(move.demand_quantity, remainingQuantity);
-        move.done_quantity = quantityToAssign;
-        remainingQuantity -= quantityToAssign;
-      }
-    });
-  });
-
-
-
-  updatedTransfers.forEach((transfer) => {
-    fetch(`/api/pos/transfer/${transfer.id}/confirm`, {
-      method: "POST",
-      body: JSON.stringify({
-        id: transfer.id,
-        body:{
-          moves:[
-            ...transfer.moves.map(move=>({
-              id: move.id,
-              quantity: move.done_quantity
-            }))
-          ]
+      // Distribute the done_quantity across the relevant transfers
+      relevantTransfers.forEach((transfer) => {
+        const move = transfer.moves.find((move) => move.product_id === doneItem.product_id);
+        if (move && remainingQuantity > 0) {
+          const quantityToAssign = Math.min(move.demand_quantity, remainingQuantity);
+          move.done_quantity = quantityToAssign;
+          remainingQuantity -= quantityToAssign;
         }
-      }),
-    })  
-  })
-  
+      });
+    });
 
+    // Confirm the updated transfers
+    updatedTransfers
+    .filter((transfer) => !transfer.backorder_id)
+    .forEach((transfer) => {
+      fetch(`/api/pos/transfer/${transfer.id}/confirm`, {
+        method: "POST",
+        body: JSON.stringify({
+          id: transfer.id,
+          state: "done",
+          body: {
+            moves: [
+              ...transfer.moves.map((move) => ({
+                id: move.id,
+                quantity: move.done_quantity,
+              })),
+            ],
+          },
+        }),
+      });
+    });
+  }
 
-  setTodoItems([]);
+  function backorderTransfer() {
+
+    // Iterate through each product in the doneItems
+    waitingDoneItems.forEach((doneItem) => {
+      let remainingQuantity = doneItem.done_quantity;
+
+      // Find all transfers that contain this product and are backorders
+      const relevantTransfers = updatedTransfers
+        .filter((transfer) => transfer.backorder_id)
+        .filter((transfer) =>
+          transfer.moves.some((move) => move.product_id === doneItem.product_id)
+        );
+
+      // Distribute the done_quantity across the relevant backorder transfers
+      relevantTransfers.forEach((transfer) => {
+        const move = transfer.moves.find((move) => move.product_id === doneItem.product_id);
+        if (move && remainingQuantity > 0) {
+          const quantityToAssign = Math.min(move.demand_quantity, remainingQuantity);
+          move.done_quantity = quantityToAssign;
+          remainingQuantity -= quantityToAssign;
+        }
+      });
+    });
+
+    // Confirm the updated backorder transfers
+    updatedTransfers
+    .filter((transfer) => transfer.backorder_id)
+    .forEach((transfer) => {
+      fetch(`/api/pos/transfer/${transfer.id}/confirm`, {
+        method: "POST",
+        body: JSON.stringify({
+          id: transfer.id,
+          state: "done",
+          body: {
+            moves: [
+              ...transfer.moves.map((move) => ({
+                id: move.id,
+                quantity: move.done_quantity,
+              })),
+            ],
+          },
+        }),
+      });
+    });
+  }
+
+  // Determine which transfer function to call based on the presence of backorders
+
+  if(waitingDoneItems.length > 0){
+    backorderTransfer()
+  }
+  if(doneItems.length > 0){
+    normalTransfer()
+  }
+
   setDoneItems([]);
+  setTodoItems([]);
+  setWaitingItems([]);
+  setWaitingDoneItems([]);
+  // Clear the todo and done items
+  setTimeout(() => {
+    window.location.reload();
+  }, 1000);
 };
 
 
@@ -189,7 +266,13 @@ const handleMarkAsDone = () => {
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold mb-4 flex items-center"><StoreIcon className="w-6 h-6 mr-2" /> Point of Sale {id}</h1>
-        <p className=" flex items-center mb-4"><Clock className="w-6 h-6 mr-2" /> {new Date().toLocaleDateString()}</p>
+        <div>
+          <Link href={`/done/${id}`}>
+            <Button variant="outline" className="mb-4 bg-transparent">
+              POS transfers
+            </Button>
+          </Link>
+        </div>
       </div>
       <Link href="/">
         <Button variant="outline" className="mb-4">
@@ -202,7 +285,7 @@ const handleMarkAsDone = () => {
           <Tabs defaultValue="todo" className="w-full">
             <TabsList className="bg-slate-200 rounded-full mx-auto w-fit flex justify-center">
               <TabsTrigger className="h-8 px-8 rounded-full" value="todo">Todo ({todoItems.length})</TabsTrigger>
-              <TabsTrigger className="h-8 px-8 rounded-full" value="done">Done ({doneItems.length})</TabsTrigger>
+              <TabsTrigger className="h-8 px-8 rounded-full" value="done">Done ({doneItems.length + waitingDoneItems.length})</TabsTrigger>
               <TabsTrigger className="h-8 px-8 rounded-full" value="waiting">
                 Backorders ({waitingItems.length})
               </TabsTrigger>
@@ -226,7 +309,7 @@ const handleMarkAsDone = () => {
                               {item.product_name}
                               <Badge className="ml-2 p-0 border-none absolute top-2 right-2 text-gray-800 rounded-full text-md" variant="outline"> {item.demand_quantity}</Badge>
                             </p>
-                            <p className="flex items-center gap-1 bg-slate-50 rounded-xl border w-fit px-3">{400} <Package size={18} /></p>
+                            <p className="flex items-center gap-1 bg-slate-50 rounded-xl border w-fit px-3">{item.product_available_qty??0} <Package size={18} /></p>
                           </div>
                         </div>
                         <div className="flex gap-2 items-center">
@@ -252,12 +335,20 @@ const handleMarkAsDone = () => {
             </TabsContent>
             <TabsContent value="done">
               <div className="space-y-2">
-                {!doneItems.length ? (
+                {!doneItems.length && !waitingDoneItems.length ? (
                   <div className="flex gap-3 justify-center items-center h-32">
                     <PackageX size={40} strokeWidth={1} />
                     <p>No items have been checked</p>
                   </div>
                 ) : (
+                  <>
+                  {
+                  doneItems &&
+                  doneItems.length > 0 &&
+                  <h4 className="text-lg font-medium">New Items</h4>
+                  }
+                  {
+                  doneItems &&
                   doneItems.map((item) => (
                     <Card key={item.id}>
                       <CardContent className="p-4 flex justify-between items-center text-gray-500">
@@ -280,8 +371,48 @@ const handleMarkAsDone = () => {
                       </CardContent>
                     </Card>
                   ))
+                  }
+                  {
+                  waitingDoneItems &&
+                  waitingDoneItems.length > 0 &&
+                  <h4 className="text-lg font-medium">Backorders Items</h4>
+                  }
+                  {
+                  waitingDoneItems &&
+                  waitingDoneItems.map((item) => (
+                    <Card key={item.id}>
+                      <CardContent className="p-4 flex justify-between items-center text-gray-500">
+                        <div className="flex items-center space-x-4">
+                          <Image src={"data:image/png;base64," + item.product_image || "/placeholder.svg"} alt={item.product_name} width={50} height={50} className="rounded-xl size-12 object-contain p-1 bg-slate-100 border" />
+                          <div>
+                            <p className="font-medium">{item.product_name}
+                              <Badge variant="secondary" className={cn("text-sm ml-2 rounded-full",
+                                (item.done_quantity == 0 && "bg-red-500 text-white hover:bg-red-600"),
+                                (item.done_quantity != 0 && "bg-yellow-500 text-black hover:bg-yellow-600"),
+                                (item.done_quantity == item.demand_quantity && "bg-green-500 text-white hover:bg-green-600")
+                              )}>
+                                {item.done_quantity}
+                                {item.demand_quantity != item.done_quantity && <span className="ml-1"> / {item.demand_quantity}</span>}
+                              </Badge>
+                            </p>
+                          </div>
+                        </div>
+                        <Checkbox className="w-6 h-6" checked={true} onCheckedChange={() => handleUncheck(item)} />
+                      </CardContent>
+                    </Card>
+                  ))
+                  }
+                  </>
                 )}
               </div>
+
+          <div className="flex justify-center mt-10">
+            <Button
+             onClick={handleMarkAsDone}
+             disabled={(doneItems.length ==0) && (waitingDoneItems.length ==0)} size={"lg"} className="text-lg py-6">
+              Mark as Done <CheckIcon className="w-6 h-6 ml-2" />
+            </Button>
+          </div>
             </TabsContent>
             <TabsContent value="waiting">
               <div className="space-y-2 flex-col flex justify-center items-center ">
@@ -331,13 +462,6 @@ const handleMarkAsDone = () => {
             </TabsContent>
           </Tabs>
 
-          <div className="flex justify-center mt-10">
-            <Button
-             onClick={handleMarkAsDone}
-             disabled={todoItems.length > 0} size={"lg"} className="text-lg py-6">
-              Mark as Done <CheckIcon className="w-6 h-6 ml-2" />
-            </Button>
-          </div>
         </div>
       </div>
     </div>

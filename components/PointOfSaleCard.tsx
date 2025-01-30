@@ -27,12 +27,13 @@ export type Item = {
   demand_quantity: number
   done_quantity: number
   backorder:boolean
+  product_available_qty:number
 }
 
 
 export type Transfer = {
   id: number
-  date: string
+  date: Date
   date_done: string
   name: string
   state:string
