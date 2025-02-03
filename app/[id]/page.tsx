@@ -3,165 +3,159 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { ArrowLeft, CheckIcon, Package, PackageCheck, PackageX, StoreIcon, XIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { ArrowLeft, CheckIcon, Layers, PackageCheck, PackageX, StoreIcon } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Item, Transfer } from "@/components/PointOfSaleCard"
+import ItemCard from "./components/ItemCard"
+import useTransfers, { API_ENDPOINT } from "./hooks/useTransfers"
 
-
-export default function PointOfSalePage() {
+// Constants
+// Main Component
+const PointOfSalePage = () => {
   const { id } = useParams()
+  const { transfers, loading, error } = useTransfers(id as string)
   const [todoItems, setTodoItems] = useState<Item[]>([])
   const [waitingItems, setWaitingItems] = useState<Item[]>([])
   const [doneItems, setDoneItems] = useState<Item[]>([])
   const [waitingDoneItems, setWaitingDoneItems] = useState<Item[]>([])
-  const [transfers, setTransfers] = useState<Transfer[]>([])
 
-useEffect(() => {
-  // Fetch data from the endpoint
-  const fetchData = async () => {
-    try {
-      const response = await fetch(`/api/pos/${id}/transfers`);
-      const data = await response.json();
-      console.log(data)
-      setTransfers(data.transfers);
-      // Use a map to accumulate quantities for each product_id
-      const productMap = new Map();
-      const productMap2 = new Map(); // for waiting items that comes from backorder
+  useEffect(() => {
+    if(loading) return
+    if(!transfers) return
+    if(!transfers.length) return
 
-      // get only transfers that are not backorder
-      data.transfers
-      .filter((t:{state:string})=>t.state !== "done")
-      .forEach((transfer: { moves: Item[], backorder_id:number }) => {
-        if(!transfer.backorder_id){
-          transfer.moves.forEach((move: Item) => {
-            if (productMap.has(move.product_id)) {
-              // If the product_id already exists in the map, update the quantity
-              const existingItem = productMap.get(move.product_id);
-              existingItem.demand_quantity += move.demand_quantity;
-            } else {
-              // If the product_id doesn't exist, add it to the map
-              productMap.set(move.product_id, { ...move, backorder:false });
-            }
-          });
-        }else{
-          transfer.moves.forEach((move: Item) => {
-            if (productMap2.has(move.product_id)) {
-              // If the product_id already exists in the map, update the quantity
-              const existingItem = productMap2.get(move.product_id);
-              existingItem.demand_quantity += move.demand_quantity;
-            } else {
-              // If the product_id doesn't exist, add it to the map
-              productMap2.set(move.product_id, { ...move, backorder:true });
-            }
-          });
-        }
-      });
+    const productMap = new Map<number, Item>()
+    const productMap2 = new Map<number, Item>()
 
-      // Convert the map values to an array
-      const uniqueProducts = Array.from(productMap.values());
-      const uniqueProducts2 = Array.from(productMap2.values());
+    transfers
+      .filter((t) => t.state !== "done")
+      .forEach((transfer) => {
+        transfer.moves.forEach((move) => {
+          const map = transfer.backorder_id ? productMap2 : productMap
+          if (map.has(move.product_id)) {
+            const existingItem = map.get(move.product_id)!
+            existingItem.demand_quantity += move.demand_quantity
+          } else {
+            map.set(move.product_id, { ...move, backorder: !!transfer.backorder_id })
+          }
+        })
+      })
+      console.log(productMap)
 
 
-    console.log("backorder count", 
-      data.transfers.filter((t:{state:string})=>t.state !== "done")
-      .filter((t:{backorder_id:number})=>t.backorder_id)
-      .length
-    )
-    console.log("normal count", 
-      data.transfers.filter((t:{state:string})=>t.state !== "done")
-      .filter((t:{backorder_id:number})=>!t.backorder_id)
-      .length
-    )
+
+    setTodoItems(Array.from(productMap.values()).filter((item) => item.done_quantity === 0))
+    setWaitingItems(Array.from(productMap2.values()).filter((item) => item.done_quantity === 0))
+  }, [transfers, loading])
+
+const handleCheck = (item: Item) => {
+  if (item.backorder) {
+    // For backorder items
+    setWaitingItems((prev) => prev.filter((i) => i.id !== item.id));
+    setWaitingDoneItems((prev) => [
+      ...prev,
+      { ...item, done_quantity: item.done_quantity === 0 ? item.demand_quantity : item.done_quantity },
+    ]);
+  } else {
+    // For normal items
+    setTodoItems((prev) => prev.filter((i) => i.id !== item.id));
+    setDoneItems((prev) => [
+      ...prev,
+      { ...item, done_quantity: item.done_quantity === 0 ? item.demand_quantity : item.done_quantity },
+    ]);
+  }
+};
+
+const handleCancel = (item: Item) => {
+  if (item.backorder) {
+    // For backorder items
+    setWaitingItems((prev) => prev.filter((i) => i.id !== item.id));
+    setWaitingDoneItems((prev) => [...prev, { ...item, done_quantity: 0 }]);
+  } else {
+    // For normal items
+    setTodoItems((prev) => prev.filter((i) => i.id !== item.id));
+    setDoneItems((prev) => [...prev, { ...item, done_quantity: 0 }]);
+  }
+};
+
+const handleUncheck = (item: Item) => {
+  if (item.backorder) {
+    // For backorder items
+    setWaitingDoneItems((prev) => prev.filter((i) => i.id !== item.id));
+    setWaitingItems((prev) => [...prev, {...item, done_quantity: 0}]);
+  } else {
+    // For normal items
+    setDoneItems((prev) => prev.filter((i) => i.id !== item.id));
+    setTodoItems((prev) => [...prev, {...item, done_quantity: 0}]);
+  }
+};
+
+const handleQuantityChange = (itemId: number, newQuantity: number) => {
+  // Check if the item is in todoItems or waitingItems
+  const isTodoItem = todoItems.some((item) => item.id === itemId);
+
+  if (isTodoItem) {
+    // Update quantity in todoItems
+    setTodoItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId ? { ...item, done_quantity: newQuantity } : item
+      )
+    );
+  } else {
+    // Update quantity in waitingItems
+    setWaitingItems((prev) =>
+      prev.map((item) =>
+        item.id === itemId ? { ...item, done_quantity: newQuantity } : item
+      )
+    );
+  }
+};
+
+const handleMarkAsDone = async () => {
+  // Filter out transfers that are already done
+  const updatedTransfers = transfers.filter((t) => t.state !== "done");
 
 
-      // Set the state with the unique products
-      setTodoItems(uniqueProducts);
-      setWaitingItems(uniqueProducts2);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
+  // Function to confirm a transfer
+  const confirmTransfer = async (transfer: Transfer) => {
+    const isBackorder = !!(transfer.backorder_id)
+    const workingItems = isBackorder ? waitingDoneItems : doneItems
+
+    const isAllDone = transfer.moves.every((move) => {
+        return workingItems.some((item) => item.product_id === move.product_id) || move.done_quantity > 0
+    })
+
+
+    await fetch(`${API_ENDPOINT}/transfer/${transfer.id}/confirm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: transfer.id,
+        state: isAllDone ? "done" : "assigned",
+        body: {
+          moves: transfer.moves.map((move) => ({
+            id: move.id,
+            quantity: move.done_quantity,
+          })),
+        },
+      }),
+    });
   };
 
-  fetchData();
-}, [id]);
-
-  const handleCheck = (item: Item) => {
-    if(!item.backorder){
-    setTodoItems(todoItems.filter((i) => i.id !== item.id))
-    setDoneItems([...doneItems, {
-      ...item,
-      done_quantity: item.done_quantity == 0 ? item.demand_quantity : item.done_quantity
-    }])
-    }else{
-      setWaitingItems(waitingItems.filter((i) => i.id !== item.id))
-      setWaitingDoneItems([... waitingDoneItems, {
-        ...item,
-        done_quantity: item.done_quantity == 0 ? item.demand_quantity : item.done_quantity
-      }])
-    }
-  }
-
-  const handleCancel = (item: Item) => {
-    if(!item.backorder){
-    setTodoItems(todoItems.filter((i) => i.id !== item.id))
-    setDoneItems([...doneItems, {
-      ...item,
-      done_quantity: 0 // Assuming the item is canceled
-    }])
-    }else{
-      setWaitingItems(waitingItems.filter((i) => i.id !== item.id))
-      setWaitingDoneItems([... waitingDoneItems,{
-        ...item,
-        done_quantity: 0 // Assuming the item is canceled
-      }])
-    }
-  }
-
-  const handleUncheck = (item: Item) => {
-    if(!item.backorder){
-      setDoneItems(doneItems.filter((i) => i.id !== item.id))
-      setTodoItems([...todoItems, item])
-    }else{
-      setWaitingDoneItems(waitingDoneItems.filter((i) => i.id !== item.id))
-      setWaitingItems([...waitingItems, item])
-    }
-  }
-
-  const handleQuantityChange = (itemId: number, newQuantity: number) => {
-    const from = todoItems.find(item => item.id === itemId) ? "todo" : "waiting"
-    if(from === "todo"){
-      setTodoItems(todoItems.map((item) => 
-        item.id === itemId ? { ...item, done_quantity: newQuantity } : item
-      ))
-    }else{
-      setWaitingItems(waitingItems.map((item) =>
-        item.id === itemId ? { ...item, done_quantity: newQuantity } : item
-      ))
-    }
-  }
-
-const handleMarkAsDone = () => {
-  // Create a copy of the transfers to avoid mutating the state directly
-  const updatedTransfers = [...transfers.filter((t) => t.state !== "done")];
-
-  function normalTransfer() {
-    // Iterate through each product in the doneItems
-    doneItems.forEach((doneItem) => {
+  // Function to distribute done_quantity across transfers
+  const distributeDoneQuantity = (items: Item[],backorder:boolean) => {
+    items.forEach((doneItem) => {
       let remainingQuantity = doneItem.done_quantity;
 
-      // Find all transfers that contain this product and are not backorders
-      const relevantTransfers = updatedTransfers
-        .filter((transfer) => !transfer.backorder_id)
-        .filter((transfer) =>
+      // Find all relevant transfers for this item
+      const relevantTransfers = updatedTransfers.filter(
+        (transfer) =>
+          (backorder ? transfer.backorder_id : !transfer.backorder_id) &&
           transfer.moves.some((move) => move.product_id === doneItem.product_id)
-        );
+      );
 
       // Distribute the done_quantity across the relevant transfers
       relevantTransfers.forEach((transfer) => {
@@ -173,102 +167,64 @@ const handleMarkAsDone = () => {
         }
       });
     });
+  };
 
-    // Confirm the updated transfers
-    updatedTransfers
-    .filter((transfer) => !transfer.backorder_id)
-    .forEach((transfer) => {
-      fetch(`/api/pos/transfer/${transfer.id}/confirm`, {
-        method: "POST",
-        body: JSON.stringify({
-          id: transfer.id,
-          state: "done",
-          body: {
-            moves: [
-              ...transfer.moves.map((move) => ({
-                id: move.id,
-                quantity: move.done_quantity,
-              })),
-            ],
-          },
-        }),
-      });
-    });
+
+  // Distribute done_quantity for normal items
+  if (doneItems.length > 0) {
+    distributeDoneQuantity(doneItems,false);
   }
 
-  function backorderTransfer() {
-
-    // Iterate through each product in the doneItems
-    waitingDoneItems.forEach((doneItem) => {
-      let remainingQuantity = doneItem.done_quantity;
-
-      // Find all transfers that contain this product and are backorders
-      const relevantTransfers = updatedTransfers
-        .filter((transfer) => transfer.backorder_id)
-        .filter((transfer) =>
-          transfer.moves.some((move) => move.product_id === doneItem.product_id)
-        );
-
-      // Distribute the done_quantity across the relevant backorder transfers
-      relevantTransfers.forEach((transfer) => {
-        const move = transfer.moves.find((move) => move.product_id === doneItem.product_id);
-        if (move && remainingQuantity > 0) {
-          const quantityToAssign = Math.min(move.demand_quantity, remainingQuantity);
-          move.done_quantity = quantityToAssign;
-          remainingQuantity -= quantityToAssign;
-        }
-      });
-    });
-
-    // Confirm the updated backorder transfers
-    updatedTransfers
-    .filter((transfer) => transfer.backorder_id)
-    .forEach((transfer) => {
-      fetch(`/api/pos/transfer/${transfer.id}/confirm`, {
-        method: "POST",
-        body: JSON.stringify({
-          id: transfer.id,
-          state: "done",
-          body: {
-            moves: [
-              ...transfer.moves.map((move) => ({
-                id: move.id,
-                quantity: move.done_quantity,
-              })),
-            ],
-          },
-        }),
-      });
-    });
+  // Distribute done_quantity for backorder items
+  if (waitingDoneItems.length > 0) {
+    distributeDoneQuantity(waitingDoneItems,true);
   }
 
-  // Determine which transfer function to call based on the presence of backorders
+  // Confirm all updated transfers
+  await Promise.all(
+    updatedTransfers.map(async (transfer) => {
+      if (
+        (transfer.backorder_id && waitingDoneItems.length > 0) ||
+        (!transfer.backorder_id && doneItems.length > 0)
+      ) {
+        await confirmTransfer(transfer);
+      }
+    })
+  );
 
-  if(waitingDoneItems.length > 0){
-    backorderTransfer()
-  }
-  if(doneItems.length > 0){
-    normalTransfer()
-  }
-
+  // Reset state
   setDoneItems([]);
   setTodoItems([]);
   setWaitingItems([]);
   setWaitingDoneItems([]);
-  // Clear the todo and done items
-  setTimeout(() => {
-    window.location.reload();
-  }, 1000);
+
+  // Reload the page after 3 seconds
+  setTimeout(() => window.location.reload(), 3000);
 };
 
 
+
+  if (loading) return <div className="flex min-h-screen items-center justify-center">
+    Loading...</div>
+  if (error) return <div className="flex min-h-screen items-center justify-center">Error: {error}</div>
+
+      //   const todoItemsFinal = 
+      //       todoItems
+      //       .filter((item) => item.done_quantity === 0)
+
+      // const waitingItemsFinal =
+      //       waitingItems
+      //       .filter((item) => item.done_quantity === 0)
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold mb-4 flex items-center"><StoreIcon className="w-6 h-6 mr-2" /> Point of Sale {id}</h1>
+        <h1 className="text-2xl font-bold mb-4 flex items-center">
+          <StoreIcon className="w-6 h-6 mr-2" /> Point of Sale {id}
+        </h1>
         <div>
           <Link href={`/done/${id}`}>
             <Button variant="outline" className="mb-4 bg-transparent">
+              <Layers className="w-6 h-6 mr-2" />
               POS transfers
             </Button>
           </Link>
@@ -280,190 +236,114 @@ const handleMarkAsDone = () => {
           Back
         </Button>
       </Link>
-      <div className="">
-        <div>
-          <Tabs defaultValue="todo" className="w-full">
-            <TabsList className="bg-slate-200 rounded-full mx-auto w-fit flex justify-center">
-              <TabsTrigger className="h-8 px-8 rounded-full" value="todo">Todo ({todoItems.length})</TabsTrigger>
-              <TabsTrigger className="h-8 px-8 rounded-full" value="done">Done ({doneItems.length + waitingDoneItems.length})</TabsTrigger>
-              <TabsTrigger className="h-8 px-8 rounded-full" value="waiting">
-                Backorders ({waitingItems.length})
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="todo" className="w-full">
-              <div className="space-y-2">
-                {!todoItems.length ? (
-                  <div className="flex gap-3 justify-center items-center h-32">
-                    <PackageCheck size={40} strokeWidth={1} />
-                    <p>All items have been checked</p>
-                  </div>
-                ) : (
-                  todoItems&& 
-                  todoItems.map((item) => (
-                    <Card key={item.id} className="relative">
-                      <CardContent className="p-4 flex flex-col justify-between ">
-                        <div className="flex flex-1  space-x-4">
-                          <Image src={"data:image/jpeg;base64,"+item.product_image || "/placeholder.svg"} alt={item.product_name} width={50} height={50} className="rounded-xl size-16 object-contain p-1 bg-white border" />
-                          <div>
-                            <p className="">
-                              {item.product_name}
-                              <Badge className="ml-2 p-0 border-none absolute top-2 right-2 text-gray-800 rounded-full text-md" variant="outline"> {item.demand_quantity}</Badge>
-                            </p>
-                            <p className="flex items-center gap-1 bg-slate-50 rounded-xl border w-fit px-3">{item.product_available_qty??0} <Package size={18} /></p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                          <Input
-                            type="number"
-                            value={item.done_quantity}
-                            onChange={(e) => handleQuantityChange(item.id, Math.min(Number.parseInt(e.target.value), item.demand_quantity))}
-                            className="w-20 ml-auto"
-                            max={item.demand_quantity}
-                          />
-                          <Button size={"icon"} onClick={() => handleCheck(item)}>
-                            <CheckIcon className="w-6 h-6" />
-                          </Button>
-                          <Button className="ml-3" variant="destructive" size={"icon"} onClick={() => handleCancel(item)}>
-                            <XIcon className="w-6 h-6" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
+      <Tabs defaultValue="todo" className="w-full">
+        <TabsList className="bg-slate-200 rounded-full mx-auto w-fit flex justify-center">
+          <TabsTrigger className="h-8 px-8 rounded-full" value="todo">
+            Todo ({todoItems.length})
+          </TabsTrigger>
+          <TabsTrigger className="h-8 px-8 rounded-full" value="done">
+            Done ({doneItems.length + waitingDoneItems.length})
+          </TabsTrigger>
+          <TabsTrigger className="h-8 px-8 rounded-full" value="waiting">
+            Backorders ({waitingItems.length})
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="todo" className="w-full">
+          <div className="space-y-2">
+            {
+             !todoItems.length ? (
+              <div className="flex gap-3 justify-center items-center h-32">
+                <PackageCheck size={40} strokeWidth={1} />
+                <p>All items have been checked</p>
               </div>
-            </TabsContent>
-            <TabsContent value="done">
-              <div className="space-y-2">
-                {!doneItems.length && !waitingDoneItems.length ? (
-                  <div className="flex gap-3 justify-center items-center h-32">
-                    <PackageX size={40} strokeWidth={1} />
-                    <p>No items have been checked</p>
-                  </div>
-                ) : (
-                  <>
-                  {
-                  doneItems &&
-                  doneItems.length > 0 &&
-                  <h4 className="text-lg font-medium">New Items</h4>
-                  }
-                  {
-                  doneItems &&
-                  doneItems.map((item) => (
-                    <Card key={item.id}>
-                      <CardContent className="p-4 flex justify-between items-center text-gray-500">
-                        <div className="flex items-center space-x-4">
-                          <Image src={"data:image/png;base64," + item.product_image || "/placeholder.svg"} alt={item.product_name} width={50} height={50} className="rounded-xl size-12 object-contain p-1 bg-slate-100 border" />
-                          <div>
-                            <p className="font-medium">{item.product_name}
-                              <Badge variant="secondary" className={cn("text-sm ml-2 rounded-full",
-                                (item.done_quantity == 0 && "bg-red-500 text-white hover:bg-red-600"),
-                                (item.done_quantity != 0 && "bg-yellow-500 text-black hover:bg-yellow-600"),
-                                (item.done_quantity == item.demand_quantity && "bg-green-500 text-white hover:bg-green-600")
-                              )}>
-                                {item.done_quantity}
-                                {item.demand_quantity != item.done_quantity && <span className="ml-1"> / {item.demand_quantity}</span>}
-                              </Badge>
-                            </p>
-                          </div>
-                        </div>
-                        <Checkbox className="w-6 h-6" checked={true} onCheckedChange={() => handleUncheck(item)} />
-                      </CardContent>
-                    </Card>
-                  ))
-                  }
-                  {
-                  waitingDoneItems &&
-                  waitingDoneItems.length > 0 &&
-                  <h4 className="text-lg font-medium">Backorders Items</h4>
-                  }
-                  {
-                  waitingDoneItems &&
-                  waitingDoneItems.map((item) => (
-                    <Card key={item.id}>
-                      <CardContent className="p-4 flex justify-between items-center text-gray-500">
-                        <div className="flex items-center space-x-4">
-                          <Image src={"data:image/png;base64," + item.product_image || "/placeholder.svg"} alt={item.product_name} width={50} height={50} className="rounded-xl size-12 object-contain p-1 bg-slate-100 border" />
-                          <div>
-                            <p className="font-medium">{item.product_name}
-                              <Badge variant="secondary" className={cn("text-sm ml-2 rounded-full",
-                                (item.done_quantity == 0 && "bg-red-500 text-white hover:bg-red-600"),
-                                (item.done_quantity != 0 && "bg-yellow-500 text-black hover:bg-yellow-600"),
-                                (item.done_quantity == item.demand_quantity && "bg-green-500 text-white hover:bg-green-600")
-                              )}>
-                                {item.done_quantity}
-                                {item.demand_quantity != item.done_quantity && <span className="ml-1"> / {item.demand_quantity}</span>}
-                              </Badge>
-                            </p>
-                          </div>
-                        </div>
-                        <Checkbox className="w-6 h-6" checked={true} onCheckedChange={() => handleUncheck(item)} />
-                      </CardContent>
-                    </Card>
-                  ))
-                  }
-                  </>
-                )}
+            ) : (
+              todoItems
+              .map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  onCheck={handleCheck}
+                  onCancel={handleCancel}
+                  onUncheck={handleUncheck}
+                  onQuantityChange={handleQuantityChange}
+                />
+              ))
+            )
+            
+            }
+          </div>
+        </TabsContent>
+        <TabsContent value="done">
+          <div className="space-y-2">
+            {!doneItems.length && !waitingDoneItems.length ? (
+              <div className="flex gap-3 justify-center items-center h-32">
+                <PackageX size={40} strokeWidth={1} />
+                <p>No items have been checked</p>
               </div>
-
+            ) : (
+              <>
+                {doneItems.length > 0 && <h4 className="text-lg font-medium">New Items</h4>}
+                {[...doneItems.map((item) => (
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    done
+                    onCheck={handleCheck}
+                    onCancel={handleCancel}
+                    onQuantityChange={handleQuantityChange}
+                    onUncheck={handleUncheck}
+                  />
+                ))].reverse()}
+                {waitingDoneItems.length > 0 && <h4 className="text-lg font-medium">Backorders Items</h4>}
+                {[...waitingDoneItems.map((item) => (
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    done
+                    onCheck={handleCheck}
+                    onCancel={handleCancel}
+                    onQuantityChange={handleQuantityChange}
+                    onUncheck={handleUncheck}
+                  />
+                ))].reverse()}
+              </>
+            )}
+          </div>
           <div className="flex justify-center mt-10">
             <Button
-             onClick={handleMarkAsDone}
-             disabled={(doneItems.length ==0) && (waitingDoneItems.length ==0)} size={"lg"} className="text-lg py-6">
+              onClick={handleMarkAsDone}
+              disabled={!doneItems.length && !waitingDoneItems.length}
+              size={"lg"}
+              className="text-lg py-6"
+            >
               Mark as Done <CheckIcon className="w-6 h-6 ml-2" />
             </Button>
           </div>
-            </TabsContent>
-            <TabsContent value="waiting">
-              <div className="space-y-2 flex-col flex justify-center items-center ">
-                {
-                  !waitingItems.length ? (
-                    <div className="flex gap-3 justify-center items-center h-32">
-                      <PackageX size={40} strokeWidth={1} />
-                      <p>No items have been checked</p>
-                    </div>
-                  ) : (
-                    waitingItems.map((item) => (
-                      <Card key={item.id} className="w-full">
-                        <CardContent className="p-4 relative flex justify-between items-center ">
-                        <div className="flex flex-1  space-x-4">
-                          <Image src={"data:image/jpeg;base64,"+item.product_image || "/placeholder.svg"} alt={item.product_name} width={50} height={50} className="rounded-xl size-16 object-contain p-1 bg-white border" />
-                          <div>
-                            <p className="">
-                              {item.product_name}
-                              <Badge className="ml-2 p-0 border-none absolute top-2 right-2  rounded-full text-md" variant="outline"> {item.demand_quantity}</Badge>
-                            </p>
-                            <p className="flex items-center gap-1 bg-slate-50 rounded-xl border w-fit px-3">{400} <Package size={18} /></p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                          <Input
-                            type="number"
-                            value={item.done_quantity}
-                            onChange={(e) => handleQuantityChange(item.id, Math.min(Number.parseInt(e.target.value), item.demand_quantity))}
-                            className="w-20 ml-auto"
-                            max={item.demand_quantity}
-                          />
-                          <Button size={"icon"} onClick={() => handleCheck(item)}>
-                            <CheckIcon className="w-6 h-6" />
-                          </Button>
-                          <Button className="ml-3" variant="destructive" size={"icon"} onClick={() => handleCancel(item)}>
-                            <XIcon className="w-6 h-6" />
-                          </Button>
-                        </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )
-
-
-                }
+        </TabsContent>
+        <TabsContent value="waiting">
+          <div className="space-y-2 flex-col flex justify-center ">
+            {!waitingItems.length ? (
+              <div className="flex gap-3 justify-center items-center h-32">
+                <PackageCheck size={40} strokeWidth={1} />
+                <p>All items have been checked</p>
               </div>
-            </TabsContent>
-          </Tabs>
-
-        </div>
-      </div>
+            ) : (
+              waitingItems.map((item) => (
+                <ItemCard
+                  key={item.id}
+                  item={item}
+                  onCheck={handleCheck}
+                  onCancel={handleCancel}
+                  onQuantityChange={handleQuantityChange}
+                  onUncheck={handleUncheck}
+                />
+              ))
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
+
+export default PointOfSalePage

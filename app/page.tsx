@@ -51,7 +51,14 @@ export default function Home() {
     <AccordionContent>
       <div className="grid grid-cols-1 p-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {
-          !POSs.length ?
+          !POSs
+          .filter((pos) =>
+                        (pos?.internal_transfers?.assigned ?? 0)
+                        + (pos?.internal_transfers?.confirmed ?? 0)
+                        + (pos?.internal_transfers?.draft ?? 0)
+                        + (pos?.internal_transfers?.assigned ?? 0)
+          )
+          .length ?
           <p>No pending point of sales</p>
           :
         POSs.filter((pos) => 
@@ -71,11 +78,11 @@ export default function Home() {
         Done Point of Sales
       <Badge>{POSs.filter(
         (pos) => (
-          (pos?.internal_transfers?.assigned ?? 0) +
-          (pos?.internal_transfers?.confirmed ?? 0) +
-          (pos?.internal_transfers?.draft ?? 0) +
-          (pos?.internal_transfers?.assigned ?? 0)
-        ) != 0
+            (pos?.internal_transfers?.assigned ?? 0) +
+            (pos?.internal_transfers?.confirmed ?? 0) +
+            (pos?.internal_transfers?.draft ?? 0) +
+            (pos?.internal_transfers?.assigned ?? 0) 
+        )  == 0
       ).length}</Badge>
       </div>
 </AccordionTrigger>

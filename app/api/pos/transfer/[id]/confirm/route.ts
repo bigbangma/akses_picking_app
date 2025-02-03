@@ -1,5 +1,8 @@
-export async function GET(request: Request,{params}: {params: {id: string}}) {
-  const { id } = params;
+export async function GET(request: Request,{params}:{
+  params: Promise<{ id : string }>
+}) {
+  
+  const  id = (await params).id
 
   try {
 
@@ -40,7 +43,7 @@ export async function POST(request: Request) {
 
     // Second fetch with the session ID included in the headers as a cookie
     const dataResponse = await fetch(backend + `/api/transfer/${id}/${state}`, {
-      method: "POST",
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer " + auth,
@@ -59,3 +62,4 @@ export async function POST(request: Request) {
   }
 
 }
+

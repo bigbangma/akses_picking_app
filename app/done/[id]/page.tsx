@@ -14,6 +14,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import Image from "next/image"
+import { ArrowLeft } from "lucide-react"
 
 
 
@@ -39,7 +40,9 @@ useEffect(() => {
         if (!acc[date]) {
           acc[date] = [];
         }
-        acc[date].push({...transfer,date: new Date(transfer.date)});
+        if(transfer.state==="done") {
+          acc[date].push({...transfer,date: new Date(transfer.date)});
+        }
         return acc;
       }, {});
       setTransfersByDay(tranfersByDay)
@@ -57,7 +60,7 @@ useEffect(() => {
   return (
     <div className="container mx-auto p-4">
       <Link className="" href={"/" + id}>
-      <Button>Back</Button>
+      <Button variant={"outline"}><ArrowLeft />Back</Button>
       </Link>
             <Accordion className="mt-10" type="multiple" >
               {
@@ -123,50 +126,6 @@ useEffect(() => {
                     </AccordionContent>
                   </AccordionItem>
                 ))
-              }
-              {
-                // transfers.map((transfer: Transfer) => (
-                //   <AccordionItem value={"" + transfer.id} key={transfer.id}>
-                //     <AccordionTrigger>
-                //       <div className="flex justify-between">
-                //         <div className="flex items-center">
-                //           <span className="mr-2 text-sm font-medium text-gray-900 dark:text-white">
-                //             #{transfer.id}
-                //           </span>
-                //           <span className="text-sm text-gray-500 dark:text-gray-400">
-                //             {transfer.date}
-                //           </span>
-                //         </div>
-                //         <Badge className="ml-2">
-                //           {transfer.state}
-                //         </Badge>
-                //       </div>
-                //     </AccordionTrigger>
-                //     <AccordionContent>
-                //       <div className="flex flex-col gap-2">
-                //         {transfer.moves.map((item: Item) => (
-                //           <div key={item.id} className="flex justify-between">
-                //             <div className="flex">
-                //             <Image
-                //               src={"data:image/png;base64," + item.product_image}
-                //               alt={item.product_name}
-                //               width={50}
-                //               height={50}
-                //               className="mr-2 p-1 rounded-xl aspect-square object-contain border bg-white"
-                //             />
-                //             <span className="text-sm font-medium text-gray-900 dark:text-white">
-                //               {item.product_name}
-                //             </span>
-                //             </div>
-                //             <span className="text-sm font-medium text-gray-900 dark:text-white">
-                //               {item.done_quantity}
-                //             </span>
-                //           </div>
-                //         ))}
-                //       </div>
-                //     </AccordionContent>
-                //   </AccordionItem>
-                // ))
               }
             </Accordion>
     </div>
