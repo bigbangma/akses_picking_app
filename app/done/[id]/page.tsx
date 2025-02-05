@@ -80,49 +80,49 @@ useEffect(() => {
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-4">
-                      <div className="flex flex-col gap-2">
-                        {transfers.map((transfer: Transfer) => (
-                          <div key={transfer.id} className="flex justify-between border shadow bg-white px-2 rounded-xl">
-                            <Accordion type="single" className="w-full" collapsible>
-                            <AccordionItem value={"" + transfer.id} key={transfer.id}>
-                              <AccordionTrigger>
-                                <div className="flex items-center">
-                                  <span className="mr-2 text-sm font-medium text-gray-900 dark:text-white">
-                                    #{transfer.id}
-                                  </span>
-                                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                                    {transfer.date.toLocaleTimeString()}
-                                  </span>
+                      {
+                        (()=>{
+                          const products = new Map<number, Item>()
+
+                          transfers.forEach((transfer) => {
+                            transfer.moves.forEach((move) => {
+                              if (products.has(move.product_id)) {
+                                const existingItem = products.get(move.product_id)!
+                                existingItem.demand_quantity += move.demand_quantity
+                              } else {
+                                products.set(move.product_id, {
+                                  ...move,
+                                  demand_quantity: move.demand_quantity,
+                                })
+                              }
+                            })
+                          })
+
+                          return (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
+                              {Array.from(products.values()).map((item) => (
+                                <div key={item.id} className="p-2 bg-white border rounded-xl flex gap-4">
+                                  <Image
+                                    src={"data:image/jpeg;base64," + item.product_image || "/placeholder.svg"}
+                                    alt={item.product_name}
+                                    width={50}
+                                    height={50}
+                                    className="size-12 object-contain bg-slate-50 p-[2px] rounded-xl border "
+                                  />
+                                  <div className="">
+                                    <h5 className="mb-2 text-sm tracking-tight text-gray-900 dark:text-white">
+                                      {item.product_name}
+                                    </h5>
+                                    <p className="mb-3 font-normal text-xs text-gray-700 dark:text-gray-400">
+                                      Quantity: <span className="font-bold text-black">{item.demand_quantity}</span>
+                                    </p>
+                                  </div>
                                 </div>
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                <div className="flex flex-col gap-2">
-                                  {transfer.moves.map((item: Item) => (
-                                    <div key={item.id} className="flex justify-between">
-                                      <div className="flex">
-                                      <Image
-                                        src={"data:image/png;base64," + item.product_image}
-                                        alt={item.product_name}
-                                        width={50}
-                                        height={50}
-                                        className="mr-2 p-1 rounded-xl aspect-square object-contain border bg-white"
-                                      />
-                                      <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                        {item.product_name}
-                                      </span>
-                                      </div>
-                                      <span className="text-sm font-bold bg-gray-50 h-fit p-1 rounded-full border text-gray-900 dark:text-white">
-                                        {item.done_quantity}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                            </Accordion>
-                          </div>
-                        ))}
-                      </div>
+                              ))}
+                            </div>
+                          )
+                        })()
+                      }
                     </AccordionContent>
                   </AccordionItem>
                 ))

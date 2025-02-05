@@ -26,12 +26,16 @@ export default function Home() {
       setPOSs(data.pos as POS[])
       console.log(data.pos)
     })
+
   },[])
 
 
 
 
   return (
+    !POSs ?
+  <div>No Point of Sales</div>
+    :
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Points of Sale</h1>
 

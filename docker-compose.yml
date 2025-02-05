@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  nextjs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Optional: Add Odoo connection details as environment variables
+      - ODOO_URL=http://odoo:8069
+    networks:
+      - app_network
+    # Removed depends_on to allow independent startup
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+
+  odoo:
+    image: odoo:18
+    restart: always
+    ports:
+      - "8069:8069"
+    environment:
+      - HOST=postgres
+      - PORT=5432
+      - USER=odoo
+      - PASSWORD=odoo_password
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - ./odoo/addons:/mnt/extra-addons
+      - ./odoo/config:/etc/odoo
+    depends_on:
+      - postgres
+    networks:
+      - app_network
+
+  postgres:
+    image: postgres:16
+    restart: always
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo_password
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+  odoo_data:
+
+networks:
+  app_network:
+    driver: bridge

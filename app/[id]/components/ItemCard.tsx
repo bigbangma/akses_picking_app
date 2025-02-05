@@ -35,11 +35,11 @@ const ItemCard = ({
           className="rounded-xl size-20 object-contain p-1 bg-white border"
         />
         <div>
-          <p>
+          <p className='max-w-[90%]'>
             {item.product_name}
             {
               !done ?
-                <Badge className="ml-2 p-0 border-none absolute top-3 right-3 text-gray-800 rounded-full text-md" variant="outline">
+                <Badge  className="ml-2 p-0 border-none absolute top-3 right-3 text-black font-semibold text-md rounded-full " variant="outline">
                   {item.demand_quantity}
                 </Badge>
                 :
@@ -53,7 +53,7 @@ const ItemCard = ({
                 </Badge>
             }
           </p>
-          <p className="flex items-center gap-1 bg-slate-50 rounded-xl border w-fit px-3">
+          <p className="flex  items-center gap-1 bg-slate-50 rounded-xl border w-fit px-3">
             {item.product_available_qty ?? 0} <Package size={18} />
           </p>
         </div>

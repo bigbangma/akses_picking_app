@@ -4,11 +4,12 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, CheckIcon, Layers, PackageCheck, PackageX, StoreIcon } from "lucide-react"
+import { ArrowLeft, Check, CheckIcon, Clock, Layers, ListIcon, PackageCheck, PackageX, StoreIcon } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Item, Transfer } from "@/components/PointOfSaleCard"
 import ItemCard from "./components/ItemCard"
 import useTransfers, { API_ENDPOINT } from "./hooks/useTransfers"
+// import usePOS, { POSData } from "@/store/pos"
 
 // Constants
 // Main Component
@@ -19,6 +20,9 @@ const PointOfSalePage = () => {
   const [waitingItems, setWaitingItems] = useState<Item[]>([])
   const [doneItems, setDoneItems] = useState<Item[]>([])
   const [waitingDoneItems, setWaitingDoneItems] = useState<Item[]>([])
+
+
+  // const {pos, setPos} = usePOS()
 
   useEffect(() => {
     if(loading) return
@@ -47,7 +51,36 @@ const PointOfSalePage = () => {
 
     setTodoItems(Array.from(productMap.values()).filter((item) => item.done_quantity === 0))
     setWaitingItems(Array.from(productMap2.values()).filter((item) => item.done_quantity === 0))
+
   }, [transfers, loading])
+
+
+  // useEffect(() => {
+  //   const isAdded = pos?.some((p) => p.id === Number(id))
+  //   if(isAdded) {
+  //     setPos(pos?.map((p) => {
+  //       if(p.id === Number(id)) {
+  //         return {
+  //           ...p,
+  //           todo:todoItems,
+  //           waiting:waitingItems,
+  //           todoDone:doneItems,
+  //           waitingDone:waitingDoneItems
+  //         }
+  //       }
+  //       return p
+  //     }))
+  //   }else{
+  //     setPos([...(pos??[]),{
+  //       id:Number(id),
+  //       todo:todoItems,
+  //       waiting:waitingItems,
+  //       todoDone:doneItems,
+  //       waitingDone:waitingDoneItems
+  //     }] as POSData[])
+  //   }
+  //     console.log(pos)
+  // },[doneItems,todoItems,waitingItems,waitingDoneItems,id,setPos])
 
 const handleCheck = (item: Item) => {
   if (item.backorder) {
@@ -239,14 +272,18 @@ const handleMarkAsDone = async () => {
       <Tabs defaultValue="todo" className="w-full">
         <TabsList className="bg-slate-200 rounded-full mx-auto w-fit flex justify-center">
           <TabsTrigger className="h-8 px-8 rounded-full" value="todo">
-            Todo ({todoItems.length})
+           <ListIcon className="w-4 h-4 mr-2"/> Todo {todoItems.length > 0 ? todoItems.length : ""}
           </TabsTrigger>
           <TabsTrigger className="h-8 px-8 rounded-full" value="done">
-            Done ({doneItems.length + waitingDoneItems.length})
+           <Check className="w-4 h-4 mr-2"/> Done {(doneItems.length + waitingDoneItems.length)>0 
+           ? (doneItems.length + waitingDoneItems.length) : ""}
           </TabsTrigger>
+          {
+            waitingItems.length > 0 &&
           <TabsTrigger className="h-8 px-8 rounded-full" value="waiting">
-            Backorders ({waitingItems.length})
+           <Clock className="w-4 h-4 mr-2"/> Backorders {waitingItems.length??""}
           </TabsTrigger>
+          }
         </TabsList>
         <TabsContent value="todo" className="w-full">
           <div className="space-y-2">
