@@ -49,8 +49,8 @@ const PointOfSalePage = () => {
 
 
 
-    setTodoItems(Array.from(productMap.values()).filter((item) => item.done_quantity === 0))
-    setWaitingItems(Array.from(productMap2.values()).filter((item) => item.done_quantity === 0))
+    setTodoItems(Array.from(productMap.values()))
+    setWaitingItems(Array.from(productMap2.values()))
 
   }, [transfers, loading])
 
