@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Picking App Dockerization
 
-## Getting Started
+## Overview
 
-First, run the development server:
+The Picking App is a dashboard application built with Next.js 15. It connects to Odoo via API to handle POS internal transfers in a simpler manner. This application is designed for employees working as storekeepers, allowing them to manage POS internal transfers and ship available quantities efficiently.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Features
+
+- Dashboard interface for managing POS internal transfers
+- Integration with Odoo via API
+- Simplified workflow for storekeepers
+- Real-time updates and notifications
+
+## Prerequisites
+
+- Docker
+- Docker Compose
+
+## Clone the repository:
+
+```
+git clone https://github.com/bigbangma/akses-picking-app.git ./picking-app
+cd picking-app
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Project Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+/home/whybe/BigBang/dev/AKSES/
+├── picking-app/
+│   ├── .dockerignore
+│   ├── .env
+│   ├── compose.example.yml
+│   ├── dockerfile
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── public/
+│   ├── next.config.ts
+│   └── ...
+├── compose.yml
+└── ...
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment Variables
 
-## Learn More
+The application relies on the following environment variables, which should be defined in a `.env` file:
 
-To learn more about Next.js, take a look at the following resources:
+```properties
+NEXT_PUBLIC_BACKEND_API=""
+NEXT_PUBLIC_BACKEND_AUTH=""
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Docker Production Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### [Dockerfile](dockerfile)
 
-## Deploy on Vercel
+The Dockerfile is set up to use multi-stage builds to create a smaller final image. It first installs dependencies and builds the Next.js application in the `builder` stage, then copies the necessary files to the `runner` stage, installing only production dependencies and starting the application.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### [.dockerignore](.dockerignore)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The `dockerignore`  file is configured to exclude unnecessary files and directories from the Docker build context, reducing the build context size and keeping the Docker image clean.
+
+### [docker-compose.yml](compose.example.yml)
+
+The `compose.example.yml` file provides an example configuration alongside the application's required services, including the `picking-app` service. It also ensures that the necessary environment variables and volumes are set up correctly.
+
+## Summary
+
+- Dockerfile: Uses multi-stage builds to create a smaller final image, ensuring that only production dependencies are installed in the final image.
+- **.dockerignore**: Excludes unnecessary files and directories from the Docker build context.
+- **.env: Contains environment variables required by the Next.js application.
+- **docker-compose.yml**: Defines the services required for the application, including the service, and ensures that the necessary environment variables and volumes are set up correctly.
+- **compose.example.yml**: Provides an example configuration for the service.
+
+## Conclusion
+
+This setup ensures that the Picking App is correctly built and run in a production environment using Docker and Docker Compose. The application is designed to simplify the workflow for storekeepers, allowing them to manage POS internal transfers efficiently.
+
+> [!TIP]
+> You can name your docker file any name as far as you explicitly define it in the context build of the `docker-cmpose.yml` file
+
+
+> [!WARNING]  
+> Watch for the docker files extensions, sometimes the <kbd>yml</kbd> and <kbd>yaml</kbd> confuses, but both work well , EXCEPT THEY CONFUSE
