@@ -8,10 +8,10 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
+    
     env:
       DOCKER_ORG: bigbangmar
-
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
