@@ -25,6 +25,10 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
+      - name: Extract version from package.json
+        id: get_version
+        run: echo "VERSION=$(jq -r '.version' package.json)" >> $GITHUB_ENV
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
@@ -34,3 +38,4 @@ jobs:
           tags: |
             ${{ env.DOCKER_ORG }}/picking-app:latest
             ${{ env.DOCKER_ORG }}/picking-app:${{ github.sha }}
+            ${{ env.DOCKER_ORG }}/picking-app:${{ env.VERSION }}
