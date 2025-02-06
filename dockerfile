@@ -1,6 +1,11 @@
 # Use the official Node.js image as the base image
 FROM node:18-alpine AS builder
 
+# Copyright labels
+LABEL maintainer="whybe"
+LABEL name="PICKING APP"
+LABEL version="1.0.0"
+
 # Set the working directory
 WORKDIR /app
 
@@ -18,6 +23,11 @@ RUN npm run build
 
 # Use a smaller base image for the production environment
 FROM node:18-alpine AS runner
+
+# Copyright labels
+LABEL maintainer="whybe"
+LABEL name="PICKING APP"
+LABEL version="1.0.0"
 
 # Set the working directory
 WORKDIR /app

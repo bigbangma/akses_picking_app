@@ -35,3 +35,12 @@ docker-compose.yml
 .idea
 *.sublime-project
 *.sublime-workspace
+
+# Ignore Markdown files
+*.md
+
+# Ignore configuration files
+*.yml
+
+# ignore .sh files
+*.sh
