@@ -8,7 +8,10 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
+    
+    env:
+      DOCKER_ORG: bigbangmar
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -29,5 +32,5 @@ jobs:
           file: ./akses-picking-app/dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKER_HUB_USERNAME }}/picking-app:latest
-            ${{ secrets.DOCKER_HUB_USERNAME }}/picking-app:${{ github.sha }}
+            ${{ env.DOCKER_ORG }}/picking-app:latest
+            ${{ env.DOCKER_ORG }}/picking-app:${{ github.sha }}
