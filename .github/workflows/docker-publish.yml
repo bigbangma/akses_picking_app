@@ -28,8 +28,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
-          context: ./akses-picking-app
-          file: ./akses-picking-app/dockerfile
+          context: .
+          file: dockerfile
           push: true
           tags: |
             ${{ env.DOCKER_ORG }}/picking-app:latest
