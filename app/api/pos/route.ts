@@ -1,15 +1,14 @@
 export async function GET() {
   try {
-    const backend = process.env.NEXT_PUBLIC_BACKEND_API
-    const auth = process.env.NEXT_PUBLIC_BACKEND_AUTH
+    const backend = process.env.NEXT_PUBLIC_BACKEND_API;
+    const auth = process.env.NEXT_PUBLIC_BACKEND_AUTH;
     // Second fetch with the session ID included in the headers as a cookie
     const dataResponse = await fetch(backend + "/api/pos", {
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + auth,
+        Authorization: "Bearer " + auth,
       },
     });
-
 
     const data = await dataResponse.json();
 
@@ -22,3 +21,4 @@ export async function GET() {
     });
   }
 }
+

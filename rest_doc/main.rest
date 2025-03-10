@@ -1,0 +1,20 @@
+# URL is from .env by name NEXT_PUBLIC_BACKEND_API
+# Method: GET
+http://localhost:3000
+--silent
+
+# get all the POSs 
+# GET /api/pos
+
+# ========================================
+
+# Get transfers by POS
+# GET /api/pos/1/transfers
+
+
+
+# ========================================
+# Confirm a transfer Quantities
+# POST /api/pos/1/transfers/confirm
+
+
