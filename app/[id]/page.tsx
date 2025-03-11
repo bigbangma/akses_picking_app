@@ -258,7 +258,7 @@ const PointOfSalePage = () => {
           </TabsTrigger>
           {waitingItems.length > 0 && (
             <TabsTrigger className="h-8 px-8 rounded-full" value="waiting">
-              <Clock className="w-4 h-4 mr-2" /> Backorders{" "}
+              <Clock className="w-4 h-4 mr-2" /> Reliquats{" "}
               {waitingItems.length ?? ""}
             </TabsTrigger>
           )}
@@ -268,7 +268,7 @@ const PointOfSalePage = () => {
             {!todoItems.length ? (
               <div className="flex gap-3 justify-center items-center h-32">
                 <PackageCheck size={40} strokeWidth={1} />
-                <p>Tous les articles ont été vérifiés</p>
+                <p> Tous les articles ont été traités</p>
               </div>
             ) : (
               todoItems.map((item) => (
@@ -289,7 +289,7 @@ const PointOfSalePage = () => {
             {!doneItems.length && !waitingDoneItems.length ? (
               <div className="flex gap-3 justify-center items-center h-32">
                 <PackageX size={40} strokeWidth={1} />
-                <p>Aucun article n{"'"}a été vérifié</p>
+                <p>Panier vide, ajoutez des articles</p>
               </div>
             ) : (
               <>
@@ -310,7 +310,7 @@ const PointOfSalePage = () => {
                   )),
                 ].reverse()}
                 {waitingDoneItems.length > 0 && (
-                  <h4 className="text-lg font-medium">Articles en Backorder</h4>
+                  <h4 className="text-lg font-medium">Articles en Reliquat</h4>
                 )}
                 {[
                   ...waitingDoneItems.map((item) => (
@@ -344,7 +344,7 @@ const PointOfSalePage = () => {
             {!waitingItems.length ? (
               <div className="flex gap-3 justify-center items-center h-32">
                 <PackageCheck size={40} strokeWidth={1} />
-                <p>Tous les articles ont été vérifiés</p>
+                <p> Tous les articles ont été traités</p>
               </div>
             ) : (
               waitingItems.map((item) => (
