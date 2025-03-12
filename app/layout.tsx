@@ -5,8 +5,8 @@ import { Inter } from "next/font/google"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Point of Sale App",
-  description: "Manage your point of sale items",
+  title: "AKSES Stock Picking",
+  description: "L'application de Stock Picking d'AKSES",
 }
 
 export default function RootLayout({
