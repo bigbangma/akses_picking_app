@@ -102,27 +102,29 @@ const PointOfSalePage = () => {
   if (error) return <ErrorScreen error={error} />;
 
   return (
-    <div className="container mx-auto p-4">
+    <div className=" mx-auto p-0">
       <Header id={id as string} />
 
-      <Link href="/">
+      <Link href="/" className="ml-2">
         <Button variant="outline" className="mb-4">
           <ArrowLeft className="w-6 h-6 mr-2" />
           Retour
         </Button>
       </Link>
 
-      <TabsComponent
-        todoItems={todoItems}
-        waitingItems={waitingItems}
-        doneItems={doneItems}
-        waitingDoneItems={waitingDoneItems}
-        handleCheck={handleCheck}
-        handleCancel={handleCancel}
-        handleUncheck={handleUncheck}
-        handleQuantityChange={handleQuantityChange}
-        handleMarkAsDone={handleMarkAsDone}
-      />
+      <div className="w-full px-2">
+        <TabsComponent
+          todoItems={todoItems}
+          waitingItems={waitingItems}
+          doneItems={doneItems}
+          waitingDoneItems={waitingDoneItems}
+          handleCheck={handleCheck}
+          handleCancel={handleCancel}
+          handleUncheck={handleUncheck}
+          handleQuantityChange={handleQuantityChange}
+          handleMarkAsDone={handleMarkAsDone}
+        />
+      </div>
     </div>
   );
 };

@@ -48,7 +48,7 @@ export const TabsComponent = ({
         )}
       </TabsList>
 
-      <TabsContent value="todo" className="w-full">
+      <TabsContent value="todo" className="w-full px-2">
         <TodoItemsTab
           items={todoItems}
           onCheck={handleCheck}

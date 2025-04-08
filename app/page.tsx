@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import PointOfSaleCard, { POS } from "@/components/PointOfSaleCard";
 import { Skeleton } from "@/components/ui/skeleton"; // For loading state
-import { CheckCheck, CircleDot, Clock, ClockIcon } from "lucide-react";
+import { CheckCheck, CircleDot, Clock, ClockIcon, Loader2 } from "lucide-react";
 
 // Define the shape of a Transfer object (adjust based on your actual API response)
 interface Transfer {
@@ -235,7 +235,9 @@ export default function Home() {
           </div>
           <Badge>
             {posList.length}
-            {isLoading ? " (Chargement...)" : ""}
+            {isLoading ? (
+              <Loader2 className="animate-spin size-4 ml-2" />
+            ) : null}
           </Badge>
         </div>
       </AccordionTrigger>
