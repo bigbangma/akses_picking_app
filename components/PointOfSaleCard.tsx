@@ -41,8 +41,6 @@ export type Transfer = {
 };
 
 const PointOfSaleCard = ({ pos }: { pos: POS }) => {
-  // if(!transfers) return <></>
-
   return (
     <Link href={`/${pos.id}`} key={pos.id} className="no-underline">
       <Card className="hover:shadow-lg group transition-shadow relative">
