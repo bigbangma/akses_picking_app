@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import PointOfSaleCard, { POS } from "@/components/PointOfSaleCard";
 import { Skeleton } from "@/components/ui/skeleton"; // For loading state
-import { CheckCheck, CircleDot, Clock, ClockIcon, Loader2 } from "lucide-react";
+import { CheckCheck, CircleDot, ClockIcon, Loader2 } from "lucide-react";
 
 // Define the shape of a Transfer object (adjust based on your actual API response)
 interface Transfer {
