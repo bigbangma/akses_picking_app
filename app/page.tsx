@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import PointOfSaleCard, { POS } from "@/components/PointOfSaleCard";
 import { Skeleton } from "@/components/ui/skeleton"; // For loading state
+import { CheckCheck, CircleDot, Clock, ClockIcon } from "lucide-react";
 
 // Define the shape of a Transfer object (adjust based on your actual API response)
 interface Transfer {
@@ -223,11 +224,15 @@ export default function Home() {
     posList: POSWithStatus[],
     emptyMessage: string,
     isLoading?: boolean,
+    icon?: React.ReactNode,
   ) => (
     <AccordionItem value={title.toLowerCase().replace(/\s+/g, "-")}>
       <AccordionTrigger>
         <div className="flex justify-between items-center gap-3 w-full">
-          {title}
+          <div className="flex justify-center items-center gap-3">
+            {icon}
+            {title}
+          </div>
           <Badge>
             {posList.length}
             {isLoading ? " (Chargement...)" : ""}
@@ -295,18 +300,23 @@ export default function Home() {
             [...pendingPOS, ...loadingPOS, ...errorPOS],
             "Aucun point de vente en attente.",
             loadingPOS.length > 0, // Pass loading state to show indicator in badge
+            <CircleDot size={18} />,
           )}
           {/* Backorder Only POS Section */}
           {renderGridSection(
-            "Attente (Commandes Fournisseur Uniquement)", // Changed title for clarity
+            "Commandes avec Reliquats", // Changed title for clarity
             backorderOnlyPOS,
-            "Aucun point de vente avec uniquement des commandes fournisseur en attente.",
+            "Aucun point de vente avec reliquats.",
+            loadingPOS.length > 0,
+            <ClockIcon size={18} />,
           )}
           {/* Done POS Section */}
           {renderGridSection(
             "Points de Vente Terminés",
             donePOS,
             "Aucun point de vente terminé.",
+            false,
+            <CheckCheck size={18} />,
           )}
         </Accordion>
       </div>
