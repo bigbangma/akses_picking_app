@@ -12,6 +12,7 @@ export async function GET() {
 
     const data = await dataResponse.json();
 
+
     return Response.json(data);
   } catch (error) {
     console.error("Error in GET request:", error);

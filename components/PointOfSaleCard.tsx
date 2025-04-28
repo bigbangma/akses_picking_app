@@ -41,8 +41,6 @@ export type Transfer = {
 };
 
 const PointOfSaleCard = ({ pos }: { pos: POS }) => {
-  // if(!transfers) return <></>
-
   return (
     <Link href={`/${pos.id}`} key={pos.id} className="no-underline">
       <Card className="hover:shadow-lg group transition-shadow relative">
@@ -64,8 +62,7 @@ const PointOfSaleCard = ({ pos }: { pos: POS }) => {
               const transfers =
                 (pos?.internal_transfers?.assigned ?? 0) +
                 (pos?.internal_transfers?.confirmed ?? 0) +
-                (pos?.internal_transfers?.draft ?? 0) +
-                (pos?.internal_transfers?.assigned ?? 0);
+                (pos?.internal_transfers?.draft ?? 0);
 
               return transfers ? (
                 <div className="flex flex-col gap-2 items-end">
@@ -84,4 +81,3 @@ const PointOfSaleCard = ({ pos }: { pos: POS }) => {
 };
 
 export default PointOfSaleCard;
-
