@@ -1,8 +1,10 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListIcon, Check, Clock } from "lucide-react";
-import { TodoItemsTab } from "./TodoItemsTab";
+import { Item, TodoItemsTab } from "./TodoItemsTab";
 import { DoneItemsTab } from "./DoneItemsTab";
-import { Item } from "@/components/PointOfSaleCard";
+
+
+
 
 interface TabsComponentProps {
   todoItems: Item[];

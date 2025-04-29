@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import useTransfers from "./hooks/useTransfers";
+import useTransfers, { Transfer } from "./hooks/useTransfers";
 import { useItemsManagement } from "./hooks/useItemsManagement";
 import {
   confirmTransfer,
@@ -15,17 +15,9 @@ import { Header } from "./components/Header";
 import { TabsComponent } from "./components/TabsComponent";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { ErrorScreen } from "./components/ErrorScreen";
+import { Item } from "./components/TodoItemsTab";
 
 
-type Item = {
-  id: number;
-  product_id: number;
-  product_name: string;
-  product_image: string;
-  demand_quantity: number;
-  done_quantity: number;
-  backorder: boolean;
-};
 
 const PointOfSalePage = () => {
   const { id } = useParams();
@@ -53,7 +45,7 @@ const PointOfSalePage = () => {
 
     transfers
       .filter((t) => t.state !== "done")
-      .forEach((transfer) => {
+      .forEach((transfer:Transfer) => {
         transfer.moves.forEach((move: Item) => {
           const map = transfer.backorder_id ? productMap2 : productMap;
           if (map.has(move.product_id)) {

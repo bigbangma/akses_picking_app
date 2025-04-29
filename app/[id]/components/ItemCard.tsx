@@ -1,4 +1,3 @@
-import { Item } from "@/components/PointOfSaleCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { CheckIcon, Package, X, XIcon } from "lucide-react";
 import Image from "next/image";
 import React from "react";
+import { Item } from "./TodoItemsTab";
 
 // ItemCard Component
 const ItemCard = ({

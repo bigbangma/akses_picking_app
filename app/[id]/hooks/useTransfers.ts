@@ -1,7 +1,23 @@
-import { Transfer } from "@/components/PointOfSaleCard";
 import { useEffect, useState } from "react";
+import { Item } from "../components/TodoItemsTab";
 
 export const API_ENDPOINT = `/api/pos`;
+
+export type Transfer = {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_image: string;
+  demand_quantity: number;
+  done_quantity: number;
+  backorder: boolean;
+  product_available_qty: number;
+  state: string;
+  moves: Item[];
+  date: Date;
+  backorder_id?:number[];
+};
+
 
 // Custom Hook for Fetching Transfers
 const useTransfers = (id: string) => {
