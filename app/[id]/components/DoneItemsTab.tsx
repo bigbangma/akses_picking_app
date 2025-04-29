@@ -1,7 +1,7 @@
-import { Item } from "@/components/PointOfSaleCard";
 import ItemCard from "./ItemCard";
 import { CheckIcon, PackageX } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Item } from "./TodoItemsTab";
 
 interface DoneItemsTabProps {
   doneItems: Item[];

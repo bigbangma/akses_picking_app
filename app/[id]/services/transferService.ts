@@ -1,5 +1,5 @@
-import { API_ENDPOINT } from "../hooks/useTransfers";
-import { Transfer, Item } from "@/components/PointOfSaleCard";
+import { Item } from "../components/TodoItemsTab";
+import { API_ENDPOINT, Transfer } from "../hooks/useTransfers";
 
 export const confirmTransfer = async (transfer: Transfer, items: Item[]) => {
   const isAllDone = transfer.moves.every((move) => {

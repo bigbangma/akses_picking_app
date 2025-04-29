@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import useTransfers from "./hooks/useTransfers";
+import useTransfers, { Transfer } from "./hooks/useTransfers";
 import { useItemsManagement } from "./hooks/useItemsManagement";
 import {
   confirmTransfer,
@@ -13,9 +13,11 @@ import {
 } from "./services/transferService";
 import { Header } from "./components/Header";
 import { TabsComponent } from "./components/TabsComponent";
-import { Item } from "@/components/PointOfSaleCard";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { ErrorScreen } from "./components/ErrorScreen";
+import { Item } from "./components/TodoItemsTab";
+
+
 
 const PointOfSalePage = () => {
   const { id } = useParams();
@@ -43,8 +45,8 @@ const PointOfSalePage = () => {
 
     transfers
       .filter((t) => t.state !== "done")
-      .forEach((transfer) => {
-        transfer.moves.forEach((move) => {
+      .forEach((transfer:Transfer) => {
+        transfer.moves.forEach((move: Item) => {
           const map = transfer.backorder_id ? productMap2 : productMap;
           if (map.has(move.product_id)) {
             const existingItem = map.get(move.product_id)!;

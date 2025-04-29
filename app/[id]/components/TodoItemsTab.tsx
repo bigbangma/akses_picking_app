@@ -1,4 +1,3 @@
-import { Item } from "@/components/PointOfSaleCard";
 import { PackageCheck } from "lucide-react";
 import ItemCard from "./ItemCard";
 
@@ -10,6 +9,19 @@ interface TodoItemsTabProps {
   emptyMessage: string;
   emptyIcon?: React.ReactNode;
 }
+
+export type Item = {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_image: string;
+  demand_quantity: number;
+  done_quantity: number;
+  backorder: boolean;
+  product_available_qty: number;
+};
+
+
 
 export const TodoItemsTab = ({
   items,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Item } from "@/components/PointOfSaleCard";
+import { Item } from "../components/TodoItemsTab";
 
 export const useItemsManagement = () => {
   const [todoItems, setTodoItems] = useState<Item[]>([]);

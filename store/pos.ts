@@ -1,4 +1,5 @@
-import { Item, POS } from '@/components/PointOfSaleCard';
+import { Item } from '@/app/[id]/components/TodoItemsTab';
+import {  POS } from '@/components/PointOfSaleCard';
 import { create } from 'zustand';
 
 

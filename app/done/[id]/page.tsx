@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { Item, Transfer } from "@/components/PointOfSaleCard";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -14,6 +13,8 @@ import {
 } from "@/components/ui/accordion";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
+import { Transfer } from "@/app/[id]/hooks/useTransfers";
+import { Item } from "@/app/[id]/components/TodoItemsTab";
 
 export default function PointOfSalePage() {
   const { id } = useParams();
