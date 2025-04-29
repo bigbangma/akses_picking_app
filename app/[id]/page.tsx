@@ -13,9 +13,19 @@ import {
 } from "./services/transferService";
 import { Header } from "./components/Header";
 import { TabsComponent } from "./components/TabsComponent";
-import { Item } from "@/components/PointOfSaleCard";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { ErrorScreen } from "./components/ErrorScreen";
+
+
+type Item = {
+  id: number;
+  product_id: number;
+  product_name: string;
+  product_image: string;
+  demand_quantity: number;
+  done_quantity: number;
+  backorder: boolean;
+};
 
 const PointOfSalePage = () => {
   const { id } = useParams();
@@ -44,7 +54,7 @@ const PointOfSalePage = () => {
     transfers
       .filter((t) => t.state !== "done")
       .forEach((transfer) => {
-        transfer.moves.forEach((move) => {
+        transfer.moves.forEach((move: Item) => {
           const map = transfer.backorder_id ? productMap2 : productMap;
           if (map.has(move.product_id)) {
             const existingItem = map.get(move.product_id)!;
