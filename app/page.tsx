@@ -221,12 +221,13 @@ export default function Home() {
   // Helper to render a grid section
   const renderGridSection = (
     title: string,
+    value: string,
     posList: POSWithStatus[],
     emptyMessage: string,
     isLoading?: boolean,
     icon?: React.ReactNode,
   ) => (
-    <AccordionItem value={title.toLowerCase().replace(/\s+/g, "-")}>
+    <AccordionItem value={value}>
       <AccordionTrigger>
         <div className="flex justify-between items-center gap-3 w-full">
           <div className="flex justify-center items-center gap-3">
@@ -243,41 +244,21 @@ export default function Home() {
       </AccordionTrigger>
       <AccordionContent>
         <div className="grid grid-cols-1 p-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {posList.length === 0 && !isLoading ? (
+          {isLoading ? (
+            // Show skeletons when loading
+            Array.from({ length: posList.length || 3 }).map((_, index) => (
+              <Skeleton
+                key={`loading-${index}`}
+                className="h-24 w-full rounded-lg"
+              />
+            ))
+          ) : posList.length === 0 ? (
             <p className="col-span-full">{emptyMessage}</p>
           ) : (
-            <>
-              {/* Render actual POS cards */}
-              {posList.map((pos) => (
-                <PointOfSaleCard key={pos.id} pos={pos} />
-              ))}
-              {/* Optional: Render skeletons for loading items */}
-              {isLoading &&
-                loadingPOS.length > 0 &&
-                title === "Points de Vente en Attente" &&
-                Array.from({ length: loadingPOS.length }).map((_, index) => (
-                  <Skeleton
-                    key={`loading-${index}`}
-                    className="h-24 w-full rounded-lg"
-                  /> // Adjust skeleton appearance
-                ))}
-              {/* Optional: Render error items */}
-              {errorPOS.length > 0 &&
-                title === "Points de Vente en Attente" &&
-                errorPOS.map((pos) => (
-                  <div
-                    key={`error-${pos.id}`}
-                    className="border border-red-500 p-2 rounded-lg col-span-full md:col-span-1"
-                  >
-                    <p className="font-semibold text-red-600">
-                      Erreur: {pos.name || `POS ID ${pos.id}`}
-                    </p>
-                    <p className="text-sm text-red-500">
-                      {pos.errorMessage || "Impossible de charger les détails."}
-                    </p>
-                  </div>
-                ))}
-            </>
+            // Render actual POS cards
+            posList.map((pos) => (
+              <PointOfSaleCard key={pos.id} pos={pos} />
+            ))
           )}
         </div>
       </AccordionContent>
@@ -298,27 +279,34 @@ export default function Home() {
           {/* Pending POS Section (True Pending) */}
           {renderGridSection(
             "Points de Vente en Attente",
+            "pending",
             // Include loading and error POS in the first section for visibility
             [...pendingPOS, ...loadingPOS, ...errorPOS],
             "Aucun point de vente en attente.",
             loadingPOS.length > 0, // Pass loading state to show indicator in badge
             <CircleDot size={18} />,
           )}
-          {/* Backorder Only POS Section */}
-          {renderGridSection(
-            "Commandes avec Reliquats", // Changed title for clarity
-            backorderOnlyPOS,
-            "Aucun point de vente avec reliquats.",
-            loadingPOS.length > 0,
-            <ClockIcon size={18} />,
-          )}
+
           {/* Done POS Section */}
           {renderGridSection(
             "Points de Vente Terminés",
+            "done",
             donePOS,
             "Aucun point de vente terminé.",
             false,
             <CheckCheck size={18} />,
+          )}
+
+
+
+          {/* Backorder Only POS Section */}
+          {renderGridSection(
+            "Commandes avec Reliquats", // Changed title for clarity
+            "backorder-only",
+            backorderOnlyPOS,
+            "Aucun point de vente avec reliquats.",
+            loadingPOS.length > 0,
+            <ClockIcon size={18} />,
           )}
         </Accordion>
       </div>
