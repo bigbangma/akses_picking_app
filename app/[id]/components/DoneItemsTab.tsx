@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Item } from "./TodoItemsTab";
 
 interface DoneItemsTabProps {
+  todoItems: Item[];
+  waitingItems: Item[];
   doneItems: Item[];
   waitingDoneItems: Item[];
   onUncheck: (item: Item) => void;
@@ -16,6 +18,15 @@ export const DoneItemsTab = ({
   onUncheck,
   onMarkAsDone,
 }: DoneItemsTabProps) => {
+  // const valid = (
+  //             // if there is something done in todo or waiting
+  //             (doneItems.length || waitingDoneItems.length) &&
+  //             // if all the items in todo is completed or nothing at all
+  //           (( doneItems.length == 0 && todoItems.length > 0 ||(doneItems.length > 0 && todoItems.length == 0)) &&
+  //             // if all the items in waiting is completed or nothing at all
+  //            ( waitingItems.length || waitingDoneItems.length ) ||
+  //           (waitingDoneItems.length == 0 && waitingItems.length > 0 ||(waitingDoneItems.length > 0 && waitingItems.length == 0)) )
+  //           )
   return (
     <div className="space-y-2">
       {!doneItems.length && !waitingDoneItems.length ? (
@@ -55,15 +66,49 @@ export const DoneItemsTab = ({
           ))}
         </>
       )}
+        <div>
+
+        {/* <p> todo items {todoItems.length}</p>
+        <p> waiting items {waitingItems.length}</p>
+        <p> done items {doneItems.length}</p>
+        <p> waiting done items {waitingDoneItems.length}</p>
+
+
+         <p>valid todo {
+            ( doneItems.length == 0 && todoItems.length > 0 ||(doneItems.length > 0 && todoItems.length == 0)) ? "true" : "false"
+          }</p>
+          <p>valid waiting {
+            ( waitingDoneItems.length == 0 && waitingItems.length > 0 ||(waitingDoneItems.length > 0 && waitingItems.length == 0)) ? "true" : "false"
+          }</p>  */}
+
+
+
+        </div>
+        {
+          // messages to let users understand why the button is disabled
+          // !valid && (
+          //   <p className="text-red-500 text-center">
+          //     {doneItems.length == 0 && todoItems.length > 0
+          //       ? "Marquer comme Terminé n'est pas disponible car il y a des articles en attente de traitement."
+          //       : waitingDoneItems.length == 0 && waitingItems.length > 0
+          //       ? "Marquer comme Terminé n'est pas disponible car il y a des articles en attente de traitement."
+          //       : "Marquer comme Terminé n'est pas disponible car il y a des articles en attente de traitement."}
+          //   </p>
+          // )
+        }
       <div className="flex justify-center mt-10">
+        {
         <Button
           onClick={onMarkAsDone}
-          disabled={!doneItems.length && !waitingDoneItems.length}
+          disabled={    
+            !(doneItems.length || waitingDoneItems.length)
+          }
           size={"lg"}
           className="text-lg py-6"
         >
           Marquer comme Terminé <CheckIcon className="w-6 h-6 ml-2" />
         </Button>
+        }
       </div>
     </div>
   );

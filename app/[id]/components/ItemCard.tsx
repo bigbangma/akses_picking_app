@@ -38,7 +38,6 @@ const ItemCard = ({
         />
         <div>
           <div className="max-w-[90%]">
-            {"[" + item.product_id + "] "}
             {item.product_name}
             {!done ? (
               <Badge
