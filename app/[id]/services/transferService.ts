@@ -9,6 +9,9 @@ export const confirmTransfer = async (transfer: Transfer, items: Item[]) => {
     );
   });
 
+
+  console.log("Moves before confirmation:", transfer.moves);
+
   return fetch(`${API_ENDPOINT}/transfer/${transfer.id}/confirm`, {
     method: "POST",
     headers: {
@@ -35,6 +38,7 @@ export const distributeDoneQuantity = (
   const updatedTransfers = [...transfers];
 
   items.forEach((doneItem) => {
+    // Use the actual done_quantity from the item, which will be 0 for canceled items
     let remainingQuantity = doneItem.done_quantity;
 
     const relevantTransfers = updatedTransfers.filter(
@@ -47,13 +51,19 @@ export const distributeDoneQuantity = (
       const move = transfer.moves.find(
         (move) => move.product_id === doneItem.product_id,
       );
-      if (move && remainingQuantity > 0) {
-        const quantityToAssign = Math.min(
-          move.demand_quantity,
-          remainingQuantity,
-        );
-        move.done_quantity = quantityToAssign;
-        remainingQuantity -= quantityToAssign;
+      if (move) {
+        // Only assign quantity if there's something to assign
+        if (remainingQuantity > 0) {
+          const quantityToAssign = Math.min(
+            move.demand_quantity,
+            remainingQuantity,
+          );
+          move.done_quantity = quantityToAssign;
+          remainingQuantity -= quantityToAssign;
+        } else {
+          // Explicitly set to 0 for canceled items
+          move.done_quantity = 0;
+        }
       }
     });
   });

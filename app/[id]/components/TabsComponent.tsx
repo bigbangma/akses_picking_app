@@ -62,6 +62,8 @@ export const TabsComponent = ({
 
       <TabsContent value="done">
         <DoneItemsTab
+          todoItems={todoItems}
+          waitingItems={waitingItems}
           doneItems={doneItems}
           waitingDoneItems={waitingDoneItems}
           onUncheck={handleUncheck}
