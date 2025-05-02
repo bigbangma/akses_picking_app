@@ -68,8 +68,11 @@ export const Header = ({ id }: HeaderProps) => {
   }
 
   return (
-    <div className="flex justify-between items-center mb-4 bg-white p-2 border-b ">
-      <h1 className="text-2xl font-bold mb-4 flex items-center">
+    <div className="mb-4 bg-white flex h-full items-center p-2 border-b ">
+
+
+    <div className="flex justify-between h-fit  items-center container mx-auto ">
+      <h1 className="text-2xl font-bold  flex items-center">
         <StoreIcon className="w-6 h-6 mr-2" />
         {posData ? posData.name : `Point de Vente ${id}`} |
         <div className="flex ml-2 flex-col">
@@ -83,12 +86,13 @@ export const Header = ({ id }: HeaderProps) => {
       </h1>
       <div>
         <Link href={`/done/${id}`}>
-          <Button variant="outline" className="mb-4 bg-transparent">
+          <Button variant="outline" className=" bg-transparent">
             <Layers className="w-6 h-6 mr-2" />
             Commandes
           </Button>
         </Link>
       </div>
+    </div>
     </div>
   );
 };
