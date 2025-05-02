@@ -24,7 +24,21 @@ export async function GET(
       throw new Error(`Failed to fetch data: ${dataResponse.statusText}`);
     }
 
-    const data = await dataResponse.json();
+    const dataResponseForBackorder = await fetch( backend + `/api/pos/${id}/backorders`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + auth,
+        },
+      },
+    );  
+
+    const data1 = await dataResponse.json();
+    const data2 = await dataResponseForBackorder.json();
+
+    const data = {
+      transfers: [...data1.transfers, ...data2.backorders],
+    }
 
     return Response.json(data);
   } catch (error) {

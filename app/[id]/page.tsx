@@ -107,14 +107,14 @@ const PointOfSalePage = () => {
     <div className=" mx-auto p-0">
       <Header id={id as string} />
 
-      <Link href="/" className="ml-2">
+
+      <div className="w-full px-2 mx-auto container">
+      <Link href="/" className="ml-2 ">
         <Button variant="outline" className="mb-4">
           <ArrowLeft className="w-6 h-6 mr-2" />
           Retour
         </Button>
       </Link>
-
-      <div className="w-full px-2">
         <TabsComponent
           todoItems={todoItems}
           waitingItems={waitingItems}

@@ -13,6 +13,8 @@ interface DoneItemsTabProps {
 }
 
 export const DoneItemsTab = ({
+  todoItems,
+  waitingItems,
   doneItems,
   waitingDoneItems,
   onUncheck,
@@ -101,7 +103,11 @@ export const DoneItemsTab = ({
         <Button
           onClick={onMarkAsDone}
           disabled={    
-            !(doneItems.length || waitingDoneItems.length)
+            !(
+              // doneItems.length || waitingDoneItems.length &&
+              (((doneItems.length > 0) ? todoItems.length == 0 : true) &&
+              ((waitingDoneItems.length > 0) ? waitingItems.length == 0 : true))
+            ) || (doneItems.length == 0 && waitingDoneItems.length == 0)
           }
           size={"lg"}
           className="text-lg py-6"
