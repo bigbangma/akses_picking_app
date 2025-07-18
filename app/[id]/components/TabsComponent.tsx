@@ -3,9 +3,6 @@ import { ListIcon, Check, Clock } from "lucide-react";
 import { Item, TodoItemsTab } from "./TodoItemsTab";
 import { DoneItemsTab } from "./DoneItemsTab";
 
-
-
-
 interface TabsComponentProps {
   todoItems: Item[];
   waitingItems: Item[];
@@ -32,18 +29,18 @@ export const TabsComponent = ({
   return (
     <Tabs defaultValue="todo" className="w-full">
       <TabsList className="bg-slate-200 rounded-full mx-auto w-fit flex justify-center">
-        <TabsTrigger className="h-8 px-8 rounded-full" value="todo">
+        <TabsTrigger className="h-8 md:px-8 rounded-full" value="todo">
           <ListIcon className="w-4 h-4 mr-2" /> À Faire{" "}
           {todoItems.length > 0 ? todoItems.length : ""}
         </TabsTrigger>
-        <TabsTrigger className="h-8 px-8 rounded-full" value="done">
+        <TabsTrigger className="h-8 md:px-8 rounded-full" value="done">
           <Check className="w-4 h-4 mr-2" /> Terminé{" "}
           {doneItems.length + waitingDoneItems.length > 0
             ? doneItems.length + waitingDoneItems.length
             : ""}
         </TabsTrigger>
         {waitingItems.length > 0 && (
-          <TabsTrigger className="h-8 px-8 rounded-full" value="waiting">
+          <TabsTrigger className="h-8 md:px-8 rounded-full" value="waiting">
             <Clock className="w-4 h-4 mr-2" /> Reliquats{" "}
             {waitingItems.length ?? ""}
           </TabsTrigger>

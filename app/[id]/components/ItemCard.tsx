@@ -34,11 +34,13 @@ const ItemCard = ({
           alt={item.product_name}
           width={50}
           height={50}
-          className="rounded-xl size-20 object-contain p-1 bg-white border"
+          className="rounded-xl size-20 aspect-square object-contain p-1 bg-white border"
         />
         <div>
           <div className="max-w-[90%]">
-            {item.product_name}
+            <div className="text-sm md:text-base font-semibold text-gray-800">
+              {item.product_name}
+            </div>
             {!done ? (
               <Badge
                 className="ml-2 p-0 border-none absolute top-3 right-3 text-black font-semibold text-md rounded-full "
@@ -73,18 +75,47 @@ const ItemCard = ({
       </div>
       {!done ? (
         <div className="flex gap-2 items-center">
-          <Input
-            type="number"
-            value={item.done_quantity}
-            onChange={(e) =>
-              onQuantityChange(
-                item.id,
-                Math.min(Number.parseInt(e.target.value), item.demand_quantity),
-              )
-            }
-            className="w-20 ml-auto bg-slate-100 shadow-none"
-            max={item.demand_quantity}
-          />
+          <div className="flex mt-1 items-center gap-1">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() =>
+                onQuantityChange(item.id, Math.max(0, item.done_quantity - 1))
+              }
+            >
+              -
+            </Button>
+            <Input
+              type="number"
+              value={item.done_quantity}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "") {
+                  onQuantityChange(item.id, 0);
+                  return;
+                }
+                onQuantityChange(
+                  item.id,
+                  Math.min(Number.parseInt(value), item.demand_quantity),
+                );
+              }}
+              className="w-16 bg-slate-100 shadow-none text-center"
+              max={item.demand_quantity}
+            />
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() =>
+                onQuantityChange(
+                  item.id,
+                  Math.min(item.demand_quantity, item.done_quantity + 1),
+                )
+              }
+            >
+              +
+            </Button>
+          </div>
+          <div className="flex-grow" />
           <Button size={"icon"} onClick={() => onCheck(item)}>
             <CheckIcon className="w-6 h-6" />
           </Button>
@@ -115,4 +146,3 @@ const ItemCard = ({
 );
 
 export default ItemCard;
-

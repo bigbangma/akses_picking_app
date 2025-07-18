@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { StoreIcon, Layers } from "lucide-react";
+import { StoreIcon, Layers, LogOut } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface PosData {
   id: number;
@@ -19,6 +20,7 @@ export const Header = ({ id }: HeaderProps) => {
   const [posData, setPosData] = useState<PosData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchPosData = async () => {
@@ -47,6 +49,11 @@ export const Header = ({ id }: HeaderProps) => {
     fetchPosData();
   }, [id]);
 
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    router.push('/login');
+  };
+
   if (loading) {
     return (
       <div className="flex justify-between items-center mb-4">
@@ -69,30 +76,32 @@ export const Header = ({ id }: HeaderProps) => {
 
   return (
     <div className="mb-4 bg-white flex h-full items-center p-2 border-b ">
-
-
-    <div className="flex justify-between h-fit  items-center container mx-auto ">
-      <h1 className="text-2xl font-bold  flex items-center">
-        <StoreIcon className="w-6 h-6 mr-2" />
-        {posData ? posData.name : `Point de Vente ${id}`} |
-        <div className="flex ml-2 flex-col">
-          {posData?.has_active_session && (
-            <span className=" text-xs font-bold text-green-600">
-              Session active &#9679;
-            </span>
-          )}
-          <span className="text-xs text-slate-700">{`Point de Vente ${id}`}</span>
-        </div>
-      </h1>
-      <div>
-        <Link href={`/done/${id}`}>
-          <Button variant="outline" className=" bg-transparent">
-            <Layers className="w-6 h-6 mr-2" />
-            Commandes
+      <div className="flex justify-between h-fit  items-center container mx-auto ">
+        <h1 className="text-lg md:text-2xl  font-bold  flex items-center">
+          <StoreIcon className="w-6 h-6 mr-2" />
+          {posData ? posData.name : `Point de Vente ${id}`} |
+          <div className="flex ml-2 flex-col">
+            {posData?.has_active_session && (
+              <span className=" text-xs font-bold text-green-600">
+                Session active &#9679;
+              </span>
+            )}
+            <span className="text-xs text-slate-700">{`Point de Vente ${id}`}</span>
+          </div>
+        </h1>
+        <div className="flex items-center gap-2">
+          <Link href={`/done/${id}`}>
+            <Button variant="outline" className=" bg-transparent">
+              <Layers className="w-6 h-6 md:mr-2" />
+              <span className="hidden md:inline">Commandes</span>
+            </Button>
+          </Link>
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="w-6 h-6 md:mr-2" />
+            <span className="hidden md:inline">Déconnexion</span>
           </Button>
-        </Link>
+        </div>
       </div>
-    </div>
     </div>
   );
 };
