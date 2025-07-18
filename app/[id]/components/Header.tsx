@@ -69,30 +69,28 @@ export const Header = ({ id }: HeaderProps) => {
 
   return (
     <div className="mb-4 bg-white flex h-full items-center p-2 border-b ">
-
-
-    <div className="flex justify-between h-fit  items-center container mx-auto ">
-      <h1 className="text-2xl font-bold  flex items-center">
-        <StoreIcon className="w-6 h-6 mr-2" />
-        {posData ? posData.name : `Point de Vente ${id}`} |
-        <div className="flex ml-2 flex-col">
-          {posData?.has_active_session && (
-            <span className=" text-xs font-bold text-green-600">
-              Session active &#9679;
-            </span>
-          )}
-          <span className="text-xs text-slate-700">{`Point de Vente ${id}`}</span>
+      <div className="flex justify-between h-fit  items-center container mx-auto ">
+        <h1 className="text-lg md:text-2xl  font-bold  flex items-center">
+          <StoreIcon className="w-6 h-6 mr-2" />
+          {posData ? posData.name : `Point de Vente ${id}`} |
+          <div className="flex ml-2 flex-col">
+            {posData?.has_active_session && (
+              <span className=" text-xs font-bold text-green-600">
+                Session active &#9679;
+              </span>
+            )}
+            <span className="text-xs text-slate-700">{`Point de Vente ${id}`}</span>
+          </div>
+        </h1>
+        <div>
+          <Link href={`/done/${id}`}>
+            <Button variant="outline" className=" bg-transparent">
+              <Layers className="w-6 h-6 md:mr-2" />
+              <span className="hidden md:inline">Commandes</span>
+            </Button>
+          </Link>
         </div>
-      </h1>
-      <div>
-        <Link href={`/done/${id}`}>
-          <Button variant="outline" className=" bg-transparent">
-            <Layers className="w-6 h-6 mr-2" />
-            Commandes
-          </Button>
-        </Link>
       </div>
-    </div>
     </div>
   );
 };

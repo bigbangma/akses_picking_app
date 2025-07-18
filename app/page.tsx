@@ -243,7 +243,7 @@ export default function Home() {
         </div>
       </AccordionTrigger>
       <AccordionContent>
-        <div className="grid grid-cols-1 p-2 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1  md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading ? (
             // Show skeletons when loading
             Array.from({ length: posList.length || 3 }).map((_, index) => (
@@ -256,9 +256,7 @@ export default function Home() {
             <p className="col-span-full">{emptyMessage}</p>
           ) : (
             // Render actual POS cards
-            posList.map((pos) => (
-              <PointOfSaleCard key={pos.id} pos={pos} />
-            ))
+            posList.map((pos) => <PointOfSaleCard key={pos.id} pos={pos} />)
           )}
         </div>
       </AccordionContent>
@@ -266,7 +264,7 @@ export default function Home() {
   );
 
   return (
-    <div className="p-4">
+    <div className="md:p-4 p-0 py-4">
       <h1 className="text-2xl font-bold mb-4">Points de Vente</h1>
 
       <div className="container mx-auto p-0">
@@ -286,7 +284,6 @@ export default function Home() {
             loadingPOS.length > 0, // Pass loading state to show indicator in badge
             <CircleDot size={18} />,
           )}
-
           {/* Done POS Section */}
           {renderGridSection(
             "Points de Vente Terminés",
@@ -296,9 +293,6 @@ export default function Home() {
             false,
             <CheckCheck size={18} />,
           )}
-
-
-
           {/* Backorder Only POS Section */}
           {renderGridSection(
             "Commandes avec Reliquats", // Changed title for clarity

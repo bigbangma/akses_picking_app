@@ -34,11 +34,13 @@ const ItemCard = ({
           alt={item.product_name}
           width={50}
           height={50}
-          className="rounded-xl size-20 object-contain p-1 bg-white border"
+          className="rounded-xl size-20 aspect-square object-contain p-1 bg-white border"
         />
         <div>
           <div className="max-w-[90%]">
-            {item.product_name}
+            <div className="text-sm md:text-base font-semibold text-gray-800">
+              {item.product_name}
+            </div>
             {!done ? (
               <Badge
                 className="ml-2 p-0 border-none absolute top-3 right-3 text-black font-semibold text-md rounded-full "
@@ -115,4 +117,3 @@ const ItemCard = ({
 );
 
 export default ItemCard;
-
