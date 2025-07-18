@@ -75,18 +75,47 @@ const ItemCard = ({
       </div>
       {!done ? (
         <div className="flex gap-2 items-center">
-          <Input
-            type="number"
-            value={item.done_quantity}
-            onChange={(e) =>
-              onQuantityChange(
-                item.id,
-                Math.min(Number.parseInt(e.target.value), item.demand_quantity),
-              )
-            }
-            className="w-20 ml-auto bg-slate-100 shadow-none"
-            max={item.demand_quantity}
-          />
+          <div className="flex mt-1 items-center gap-1">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() =>
+                onQuantityChange(item.id, Math.max(0, item.done_quantity - 1))
+              }
+            >
+              -
+            </Button>
+            <Input
+              type="number"
+              value={item.done_quantity}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "") {
+                  onQuantityChange(item.id, 0);
+                  return;
+                }
+                onQuantityChange(
+                  item.id,
+                  Math.min(Number.parseInt(value), item.demand_quantity),
+                );
+              }}
+              className="w-16 bg-slate-100 shadow-none text-center"
+              max={item.demand_quantity}
+            />
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() =>
+                onQuantityChange(
+                  item.id,
+                  Math.min(item.demand_quantity, item.done_quantity + 1),
+                )
+              }
+            >
+              +
+            </Button>
+          </div>
+          <div className="flex-grow" />
           <Button size={"icon"} onClick={() => onCheck(item)}>
             <CheckIcon className="w-6 h-6" />
           </Button>
