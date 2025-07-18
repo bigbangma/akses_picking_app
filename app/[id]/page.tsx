@@ -62,7 +62,7 @@ const PointOfSalePage = () => {
 
     setTodoItems(Array.from(productMap.values()));
     setWaitingItems(Array.from(productMap2.values()));
-  }, [transfers, loading]);
+  }, [transfers, loading, setTodoItems, setWaitingItems]);
 
   const handleMarkAsDone = async () => {
     const updatedTransfers = transfers?.filter((t) => t.state !== "done") || [];
