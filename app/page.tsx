@@ -2,22 +2,16 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PointOfSaleCard, { POS } from "@/components/PointOfSaleCard";
-import { Skeleton } from "@/components/ui/skeleton"; // For loading state
-import { CheckCheck, CircleDot, ClockIcon, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CheckCheck, CircleDot, ClockIcon, Loader2, AlertCircle } from "lucide-react";
 
-// Define the shape of a Transfer object (adjust based on your actual API response)
+// Define the shape of a Transfer object
 interface Transfer {
-  id: number; // Or string
+  id: number;
   state: string;
-  backorder_id: boolean | unknown; // Assuming 'false' or non-existence means not a backorder
-  // Add other relevant transfer properties if needed
+  backorder_id: boolean | unknown;
 }
 
 // Define an extended POS type to include its processing status
@@ -32,18 +26,14 @@ type POSWithStatus = POS & {
   errorMessage?: string;
 };
 
-// --- IMPORTANT: Set your API endpoint ---
 const API_ENDPOINT = `/api/pos`;
-// -----------------------------------------
 
 export default function Home() {
   const [allPOSs, setAllPOSs] = useState<POSWithStatus[]>([]);
   const [isLoadingInitial, setIsLoadingInitial] = useState(true);
   const [initialError, setInitialError] = useState<string | null>(null);
 
-  // Helper: Calculate pending internal transfers count from summary
   const getPendingTransfersCount = (pos: POS): number => {
-    // Use the summary data fetched initially
     const transfers = pos?.internal_transfers ?? {};
     return (
       (transfers.assigned ?? 0) +
@@ -52,26 +42,21 @@ export default function Home() {
     );
   };
 
-  // --- Effect 1: Fetch the initial list of POS ---
   useEffect(() => {
     setIsLoadingInitial(true);
     setInitialError(null);
-    fetch("/api/pos") // Your initial endpoint
+    fetch("/api/pos")
       .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Failed to fetch initial POS list (${res.status})`);
-        }
+        if (!res.ok) throw new Error(`Failed to fetch initial POS list (${res.status})`);
         return res.json();
       })
       .then((data) => {
         if (!data || !Array.isArray(data.pos)) {
           throw new Error("Invalid data format received for POS list");
         }
-        // Initialize POS list with status
         const initialPOSList = (data.pos as POS[]).map(
           (pos): POSWithStatus => ({
             ...pos,
-            // Determine initial status based on summary count
             processingStatus:
               getPendingTransfersCount(pos) === 0 ? "done" : "initial",
           }),
@@ -80,28 +65,19 @@ export default function Home() {
       })
       .catch((err) => {
         console.error("Error fetching initial POS:", err);
-        setInitialError(
-          err instanceof Error ? err.message : "An unknown error occurred",
-        );
-        setAllPOSs([]); // Clear POSs on error
+        setInitialError(err instanceof Error ? err.message : "An unknown error occurred");
+        setAllPOSs([]);
       })
-      .finally(() => {
-        setIsLoadingInitial(false);
-      });
-  }, []); // Run only once on mount
+      .finally(() => setIsLoadingInitial(false));
+  }, []);
 
-  // --- Effect 2: Fetch detailed transfers for relevant POS ---
   useEffect(() => {
-    // Find POS that need details fetched (status is 'initial')
     const posNeedingDetails = allPOSs.filter(
       (pos) => pos.processingStatus === "initial",
     );
 
-    if (posNeedingDetails.length === 0) {
-      return; // No details to fetch
-    }
+    if (posNeedingDetails.length === 0) return;
 
-    // Mark them as loading
     setAllPOSs((currentPOSs) =>
       currentPOSs.map((pos) =>
         pos.processingStatus === "initial"
@@ -110,12 +86,10 @@ export default function Home() {
       ),
     );
 
-    // --- Function to fetch and process transfers for a single POS ---
     const fetchAndProcessTransfers = async (
       posToProcess: POSWithStatus,
     ): Promise<POSWithStatus> => {
       if (!API_ENDPOINT) {
-        console.error("API_ENDPOINT is not configured!");
         return {
           ...posToProcess,
           processingStatus: "error",
@@ -123,187 +97,136 @@ export default function Home() {
         };
       }
       try {
-        const response = await fetch(
-          `${API_ENDPOINT}/${posToProcess.id}/transfers`,
-        );
+        const response = await fetch(`${API_ENDPOINT}/${posToProcess.id}/transfers`);
         if (!response.ok) {
-          throw new Error(
-            `Failed to fetch transfers for POS ${posToProcess.id} (${response.status})`,
-          );
+          throw new Error(`Failed to fetch transfers for POS ${posToProcess.id} (${response.status})`);
         }
         const data = await response.json();
-
         if (!data || !Array.isArray(data.transfers)) {
-          throw new Error(
-            `Invalid data format received for transfers of POS ${posToProcess.id}`,
-          );
+          throw new Error(`Invalid data format for transfers of POS ${posToProcess.id}`);
         }
-
         const transfers = data.transfers as Transfer[];
-
-        // Filter for transfers that are NOT done
-        const notDoneTransfers = transfers.filter(
-          (transfer) => transfer.state !== "done",
-        );
+        const notDoneTransfers = transfers.filter((t) => t.state !== "done");
 
         if (notDoneTransfers.length === 0) {
-          // Should not happen if getPendingTransfersCount > 0, but handle defensively
-          console.warn(
-            `POS ${posToProcess.id} had pending count but no non-done transfers found in details.`,
-          );
-          return { ...posToProcess, processingStatus: "done" }; // Treat as done if no non-done transfers found
+          return { ...posToProcess, processingStatus: "done" };
         }
 
-        // Check if ALL non-done transfers are backorders
-        const allAreBackorders = notDoneTransfers.every(
-          (transfer) =>
-            transfer.backorder_id && transfer.backorder_id !== false,
-        );
-
+        const allAreBackorders = notDoneTransfers.every((t) => t.backorder_id);
         return {
           ...posToProcess,
           processingStatus: allAreBackorders ? "backorderOnly" : "pending",
         };
       } catch (err) {
-        console.error(`Error processing POS ${posToProcess.id}:`, err);
         return {
           ...posToProcess,
           processingStatus: "error",
-          errorMessage:
-            err instanceof Error ? err.message : "Failed to process details",
+          errorMessage: err instanceof Error ? err.message : "Failed to process details",
         };
       }
     };
-    // --- End of fetchAndProcessTransfers ---
 
-    // Fetch details for all relevant POS concurrently
     Promise.all(posNeedingDetails.map(fetchAndProcessTransfers)).then(
       (updatedPOSs) => {
-        // Create a map for easy lookup
         const updatesMap = new Map(updatedPOSs.map((p) => [p.id, p]));
-        // Update the main state
         setAllPOSs((currentPOSs) =>
-          currentPOSs.map(
-            (pos) => updatesMap.get(pos.id) || pos, // Use updated POS if available, otherwise keep current
-          ),
+          currentPOSs.map((pos) => updatesMap.get(pos.id) || pos),
         );
       },
     );
+  }, [allPOSs]);
 
-    // Note: No .catch here as errors are handled per-POS and stored in their status/errorMessage
-    // Note: No .finally here to set a loading flag, as loading is per-POS
-  }, [allPOSs]); // Re-run when allPOSs changes (specifically when 'initial' statuses appear)
+  const { pendingPOS, backorderOnlyPOS, donePOS, loadingPOS, errorPOS } = useMemo(() => ({
+    pendingPOS: allPOSs.filter((pos) => pos.processingStatus === "pending"),
+    backorderOnlyPOS: allPOSs.filter((pos) => pos.processingStatus === "backorderOnly"),
+    donePOS: allPOSs.filter((pos) => pos.processingStatus === "done"),
+    loadingPOS: allPOSs.filter((pos) => pos.processingStatus === "loading"),
+    errorPOS: allPOSs.filter((pos) => pos.processingStatus === "error"),
+  }), [allPOSs]);
 
-  // --- Memoized filtering for rendering ---
-  const { pendingPOS, backorderOnlyPOS, donePOS, loadingPOS, errorPOS } =
-    useMemo(() => {
-      return {
-        pendingPOS: allPOSs.filter((pos) => pos.processingStatus === "pending"),
-        backorderOnlyPOS: allPOSs.filter(
-          (pos) => pos.processingStatus === "backorderOnly",
-        ),
-        donePOS: allPOSs.filter((pos) => pos.processingStatus === "done"),
-        loadingPOS: allPOSs.filter((pos) => pos.processingStatus === "loading"), // To show loading state
-        errorPOS: allPOSs.filter((pos) => pos.processingStatus === "error"), // To show errors
-      };
-    }, [allPOSs]); // Recalculate when allPOSs changes
-
-  // --- Render Logic ---
+  const renderGrid = (posList: POSWithStatus[], isLoading: boolean, emptyMessage: string) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-6">
+      {isLoading ? (
+        Array.from({ length: posList.length || 4 }).map((_, index) => (
+          <Skeleton key={`loading-${index}`} className="h-32 w-full rounded-lg" />
+        ))
+      ) : posList.length === 0 ? (
+        <p className="col-span-full text-center text-muted-foreground py-8">{emptyMessage}</p>
+      ) : (
+        posList.map((pos) => <PointOfSaleCard key={pos.id} pos={pos} />)
+      )}
+    </div>
+  );
 
   if (isLoadingInitial) {
-    return <div className="p-4">Chargement initial des points de vente...</div>; // Or a spinner/skeleton
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="animate-spin text-primary h-12 w-12" />
+          <p className="text-muted-foreground">Chargement des points de vente...</p>
+        </div>
+      </div>
+    );
   }
 
   if (initialError) {
-    return <div className="p-4 text-red-600">Erreur: {initialError}</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center gap-4 text-destructive">
+          <AlertCircle className="h-12 w-12" />
+          <h2 className="text-xl font-semibold">Erreur de chargement</h2>
+          <p className="text-center max-w-md">{initialError}</p>
+        </div>
+      </div>
+    );
   }
 
-  // Helper to render a grid section
-  const renderGridSection = (
-    title: string,
-    value: string,
-    posList: POSWithStatus[],
-    emptyMessage: string,
-    isLoading?: boolean,
-    icon?: React.ReactNode,
-  ) => (
-    <AccordionItem value={value}>
-      <AccordionTrigger>
-        <div className="flex justify-between items-center gap-3 w-full">
-          <div className="flex justify-center items-center gap-3">
-            {icon}
-            {title}
-          </div>
-          <Badge>
-            {posList.length}
-            {isLoading ? (
-              <Loader2 className="animate-spin size-4 ml-2" />
-            ) : null}
-          </Badge>
-        </div>
-      </AccordionTrigger>
-      <AccordionContent>
-        <div className="grid grid-cols-1  md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {isLoading ? (
-            // Show skeletons when loading
-            Array.from({ length: posList.length || 3 }).map((_, index) => (
-              <Skeleton
-                key={`loading-${index}`}
-                className="h-24 w-full rounded-lg"
-              />
-            ))
-          ) : posList.length === 0 ? (
-            <p className="col-span-full">{emptyMessage}</p>
-          ) : (
-            // Render actual POS cards
-            posList.map((pos) => <PointOfSaleCard key={pos.id} pos={pos} />)
-          )}
-        </div>
-      </AccordionContent>
-    </AccordionItem>
-  );
+  const allPending = [...pendingPOS, ...loadingPOS, ...errorPOS];
 
   return (
-    <div className="md:p-4 p-0 py-4">
-      <h1 className="text-2xl font-bold mb-4">Points de Vente</h1>
+    <div className="container mx-auto p-4 sm:p-6 md:p-8">
+      <header className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 sm:mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2 sm:mb-0">
+          Points de Vente
+        </h1>
+        {loadingPOS.length > 0 && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground animate-pulse">
+            <Loader2 className="animate-spin h-4 w-4" />
+            <span>Mise à jour des statuts...</span>
+          </div>
+        )}
+      </header>
 
-      <div className="container mx-auto p-0">
-        {/* Add a general loading indicator for detail fetching if desired */}
-        {/* {loadingPOS.length > 0 && <p>Chargement des détails...</p>} */}
-
-        <Accordion type="multiple" defaultValue={["pending", "backorder-only"]}>
-          {" "}
-          {/* Allow multiple open */}
-          {/* Pending POS Section (True Pending) */}
-          {renderGridSection(
-            "Points de Vente en Attente",
-            "pending",
-            // Include loading and error POS in the first section for visibility
-            [...pendingPOS, ...loadingPOS, ...errorPOS],
-            "Aucun point de vente en attente.",
-            loadingPOS.length > 0, // Pass loading state to show indicator in badge
-            <CircleDot size={18} />,
-          )}
-          {/* Done POS Section */}
-          {renderGridSection(
-            "Points de Vente Terminés",
-            "done",
-            donePOS,
-            "Aucun point de vente terminé.",
-            false,
-            <CheckCheck size={18} />,
-          )}
-          {/* Backorder Only POS Section */}
-          {renderGridSection(
-            "Commandes avec Reliquats", // Changed title for clarity
-            "backorder-only",
-            backorderOnlyPOS,
-            "Aucun point de vente avec reliquats.",
-            loadingPOS.length > 0,
-            <ClockIcon size={18} />,
-          )}
-        </Accordion>
-      </div>
+      <Tabs defaultValue="pending" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+          <TabsTrigger value="pending">
+            <CircleDot className="h-4 w-4 mr-2" />
+            En Attente
+            <Badge variant="secondary" className="ml-2">{allPending.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="backorder-only">
+            <ClockIcon className="h-4 w-4 mr-2" />
+            Reliquats
+            <Badge variant="secondary" className="ml-2">{backorderOnlyPOS.length}</Badge>
+          </TabsTrigger>
+          <TabsTrigger value="done">
+            <CheckCheck className="h-4 w-4 mr-2" />
+            Terminés
+            <Badge variant="secondary" className="ml-2">{donePOS.length}</Badge>
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="pending">
+          {renderGrid(allPending, loadingPOS.length > 0, "Aucun point de vente en attente.")}
+        </TabsContent>
+        <TabsContent value="backorder-only">
+          {renderGrid(backorderOnlyPOS, false, "Aucun point de vente avec uniquement des reliquats.")}
+        </TabsContent>
+        <TabsContent value="done">
+          {renderGrid(donePOS, false, "Aucun point de vente terminé.")}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
+
